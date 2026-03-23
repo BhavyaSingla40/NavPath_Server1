@@ -55,7 +55,7 @@ log = logging.getLogger('NavPath')
 app = Flask(__name__, static_folder='static')
 app.config['SECRET_KEY'] = 'navpath_secret_2026'
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # ─────────────────────────────────────────────
 #  MQTT CONFIGURATION
