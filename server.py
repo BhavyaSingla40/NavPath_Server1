@@ -22,9 +22,9 @@
 ============================================================
 """
 
-# ── CRITICAL: Must be first lines before ALL other imports ──
-import eventlet
-eventlet.monkey_patch()
+# # ── CRITICAL: Must be first lines before ALL other imports ──
+# import eventlet
+# eventlet.monkey_patch()
 
 import json
 import math
