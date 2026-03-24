@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavPath | Ambulance Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white h-screen flex flex-col font-sans">
+
+    <header class="bg-red-600 p-4 text-center shadow-lg">
+        <h1 class="text-2xl font-bold tracking-widest">🚑 NAVPATH EMS</h1>
+        <p class="text-red-200 text-sm">Mobile Data Terminal</p>
+    </header>
+
+    <main class="flex-1 flex flex-col p-6 gap-6 justify-center max-w-md mx-auto w-full">
+        
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center shadow-xl">
+            <h2 class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">System Status</h2>
+            <div id="status-text" class="text-2xl font-bold text-slate-500">STANDBY</div>
+            <div id="gps-coords" class="text-xs text-slate-500 mt-4 font-mono">GPS: Not tracking</div>
+        </div>
+
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-3">
+            <label class="text-xs font-bold text-slate-400 uppercase">Select Route</label>
+            <select id="route-select" class="bg-slate-900 border border-slate-600 rounded p-3 text-white w-full">
+                <option value="ROUTE-1">PGIMER → Sector 17</option>
+                <option value="ROUTE-2">Sector 17 → PGIMER</option>
+            </select>
+        </div>
+
+        <button id="btn-emergency" onclick="toggleEmergency()" class="bg-red-600 hover:bg-red-500 text-white text-2xl font-bold py-8 rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all active:scale-95">
+            START EMERGENCY
+        </button>
+
+    </main>
+
+    <script>
+        let isTracking = false;
+        let gpsInterval;
+
+        function toggleEmergency() {
+            const btn = document.getElementById('btn-emergency');
+            const status = document.getElementById('status-text');
+
+            if (!isTracking) {
+                // START TRACKING
+                if (navigator.geolocation) {
+                    isTracking = true;
+                    btn.innerText = "END EMERGENCY";
+                    btn.classList.replace('bg-red-600', 'bg-slate-600');
+                    btn.classList.replace('hover:bg-red-500', 'hover:bg-slate-500');
+                    btn.classList.remove('shadow-[0_0_30px_rgba(220,38,38,0.4)]');
+                    
+                    status.innerText = "🔴 TRANSMITTING";
+                    status.classList.replace('text-slate-500', 'text-red-500');
+                    status.classList.add('animate-pulse');
+
+                    // Send GPS every 2 seconds
+                    gpsInterval = setInterval(sendLocation, 2000);
+                    sendLocation(); // send first one immediately
+                } else {
+                    alert("Geolocation is not supported by this browser.");
+                }
+            } else {
+                // STOP TRACKING
+                isTracking = false;
+                clearInterval(gpsInterval);
+                btn.innerText = "START EMERGENCY";
+                btn.classList.replace('bg-slate-600', 'bg-red-600');
+                btn.classList.replace('hover:bg-slate-500', 'hover:bg-red-500');
+                btn.classList.add('shadow-[0_0_30px_rgba(220,38,38,0.4)]');
+                
+                status.innerText = "STANDBY";
+                status.classList.replace('text-red-500', 'text-slate-500');
+                status.classList.remove('animate-pulse');
+                document.getElementById('gps-coords').innerText = "GPS: Tracking stopped";
+
+                // Notify server trip ended
+                fetch('/api/end_trip', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amb_id: "AMB-2026" })
+                });
+            }
+        }
+
+        function sendLocation() {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const speed = (position.coords.speed || 0) * 3.6; // m/s to km/h
+                    const route = document.getElementById('route-select').value;
+
+                    document.getElementById('gps-coords').innerText = `GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+
+                    // Send to your Render Flask Server
+                    fetch('/api/gps', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            amb_id: "AMB-2026",
+                            lat: lat,
+                            lon: lon,
+                            speed: speed,
+                            priority: "RED",
+                            route_id: route
+                        })
+                    }).catch(err => console.error("Network error:", err));
+                },
+                (error) => {
+                    document.getElementById('gps-coords').innerText = `GPS Error: ${error.message}`;
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        }
+    </script>
+</body>
+</html>
