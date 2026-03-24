@@ -4,210 +4,702 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NavPath | Command Center</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    
+
     <style>
-        body { background-color: #0f172a; color: #f8fafc; }
-        #map { height: 65vh; border-radius: 0.75rem; border: 1px solid #334155; }
-        
-        /* Custom pulsing animation for the ambulance */
-        .pulse-icon {
-            background: #ef4444;
+        /* ── Variables ── */
+        :root {
+            --bg:        #070c14;
+            --panel:     #0d1625;
+            --border:    #1a2d4a;
+            --border2:   #243d5c;
+            --txt:       #c8dff5;
+            --txt-dim:   #4e6a8a;
+            --accent:    #00d4ff;
+            --accent2:   #0a8cff;
+            --danger:    #ff3b5c;
+            --ok:        #00ff9d;
+            --warn:      #ffb800;
+            --mono:      'Share Tech Mono', monospace;
+            --head:      'Rajdhani', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: var(--head);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Scanline overlay ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,212,255,0.012) 2px,
+                rgba(0,212,255,0.012) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .logo-icon {
+            width: 32px; height: 32px;
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(0,212,255,0.3);
+        }
+        .logo h1 {
+            font-family: var(--head);
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 4px;
+            color: white;
+        }
+        .logo span { color: var(--txt-dim); font-weight: 400; font-size: 12px; letter-spacing: 2px; }
+
+        .header-right {
+            display: flex; gap: 24px; align-items: center;
+        }
+        .live-badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ok);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .live-dot {
+            width: 7px; height: 7px;
+            background: var(--ok);
             border-radius: 50%;
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            animation: pulse-red 1.5s infinite;
+            animation: blink 1.4s ease-in-out infinite;
+            box-shadow: 0 0 8px var(--ok);
         }
-        @keyframes pulse-red {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+        #clock {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--accent);
+            letter-spacing: 2px;
         }
-        
-        /* Scrollable log area */
-        #log-container { max-height: 250px; overflow-y: auto; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        /* ── Main layout ── */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 12px;
+            padding: 12px;
+            overflow: hidden;
+        }
+
+        /* ── Left column ── */
+        .left-col {
+            display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+        }
+
+        /* ── Map ── */
+        .map-wrap {
+            flex: 1;
+            border: 1px solid var(--border2);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            min-height: 0;
+        }
+        #map { height: 100%; width: 100%; }
+        .map-label {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: rgba(7,12,20,0.85);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        /* ── Stat strip ── */
+        .stat-strip {
+            display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;
+            flex-shrink: 0;
+        }
+        .stat-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+        }
+        .stat-card.s-red::after   { background: var(--danger); }
+        .stat-card.s-blue::after  { background: var(--accent2); }
+        .stat-card.s-green::after { background: var(--ok); }
+        .stat-card.s-warn::after  { background: var(--warn); }
+        .stat-card p.label {
+            font-size: 9px; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--txt-dim); margin-bottom: 6px;
+        }
+        .stat-card p.value {
+            font-size: 28px; font-weight: 700; line-height: 1;
+        }
+        .stat-card.s-red   .value { color: var(--danger); }
+        .stat-card.s-blue  .value { color: var(--accent); }
+        .stat-card.s-green .value { color: var(--ok); }
+        .stat-card.s-warn  .value { color: var(--warn); }
+
+        /* ── Right column ── */
+        .right-col {
+            display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--txt-dim);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0;
+        }
+        .panel-head .count {
+            font-family: var(--mono);
+            color: var(--accent);
+            font-size: 11px;
+        }
+        .panel-body {
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+        /* ── Ambulance card ── */
+        #ambulance-list .empty {
+            font-family: var(--mono); font-size: 11px;
+            color: var(--txt-dim); padding: 8px 0;
+        }
+        .amb-card {
+            background: rgba(0,212,255,0.04);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 6px;
+        }
+        .amb-card-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .amb-id { font-weight: 700; font-size: 15px; color: white; }
+        .pri-badge {
+            font-family: var(--mono); font-size: 10px;
+            padding: 2px 8px; border-radius: 4px; border: 1px solid;
+            font-weight: bold;
+        }
+        .pri-RED    { color: var(--danger); border-color: var(--danger); background: rgba(255,59,92,.1); }
+        .pri-YELLOW { color: var(--warn);   border-color: var(--warn);   background: rgba(255,184,0,.1); }
+        .pri-GREEN  { color: var(--ok);     border-color: var(--ok);     background: rgba(0,255,157,.1); }
+        .pri-NONE   { color: var(--txt-dim);border-color: var(--txt-dim);background: transparent; }
+
+        .amb-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .amb-stat { font-size: 11px; }
+        .amb-stat .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); }
+        .amb-stat .val { color: white; font-weight: 600; margin-top: 1px; }
+        .amb-route {
+            margin-top: 8px; padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 11px; color: var(--accent2);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── Intersection list ── */
+        .int-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 6px;
+            border-radius: 6px;
+            border-bottom: 1px solid var(--border);
+            transition: background .2s;
+        }
+        .int-row:last-child { border-bottom: none; }
+        .int-row:hover { background: rgba(255,255,255,.03); }
+        .int-info .int-id {
+            font-weight: 700; font-size: 13px; color: white;
+        }
+        .int-info .int-name {
+            font-size: 10px; color: var(--txt-dim); margin-top: 1px;
+        }
+        .hw-chip {
+            font-family: var(--mono); font-size: 9px;
+            background: rgba(0,212,255,.1); color: var(--accent);
+            border: 1px solid var(--border2);
+            padding: 1px 5px; border-radius: 3px; margin-left: 5px;
+        }
+        .state-badge {
+            font-family: var(--mono); font-size: 10px;
+            padding: 2px 8px; border-radius: 4px; border: 1px solid;
+        }
+        .st-NORMAL   { color: var(--ok);     border-color: var(--ok);     background: rgba(0,255,157,.08); }
+        .st-OVERRIDE { color: var(--danger);  border-color: var(--danger);  background: rgba(255,59,92,.1);
+                       animation: blink 1s infinite; }
+
+        /* ── Log ── */
+        #log-container {
+            flex: 1; overflow-y: auto;
+            padding: 6px 10px;
+            font-family: var(--mono);
+            font-size: 10px;
+            line-height: 1.7;
+        }
+        #log-container::-webkit-scrollbar { width: 4px; }
+        #log-container::-webkit-scrollbar-thumb { background: var(--border2); }
+        .log-normal  { color: var(--txt-dim); }
+        .log-alert   { color: var(--danger); }
+        .log-ok      { color: var(--ok); }
+        .log-info    { color: var(--accent); }
+
+        /* ── Leaflet overrides ── */
+        .leaflet-popup-content-wrapper {
+            background: var(--panel) !important;
+            color: var(--txt) !important;
+            border: 1px solid var(--border2) !important;
+            border-radius: 8px !important;
+            font-family: var(--head) !important;
+        }
+        .leaflet-popup-tip { background: var(--panel) !important; }
+
+        /* ── Ambulance pulse icon ── */
+        .amb-pulse {
+            width: 16px; height: 16px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 0 rgba(255,59,92,.8);
+            animation: pulse-amb 1.4s ease-out infinite;
+        }
+        @keyframes pulse-amb {
+            0%   { box-shadow: 0 0 0 0   rgba(255,59,92,.8); }
+            70%  { box-shadow: 0 0 0 14px rgba(255,59,92,0); }
+            100% { box-shadow: 0 0 0 0   rgba(255,59,92,0); }
+        }
+
+        /* Intersection dot — override glowing */
+        .int-glow {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col font-sans">
+<body>
 
-    <header class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h1 class="text-xl font-bold tracking-wider text-white">NAVPATH <span class="text-slate-400 font-light text-sm">| City Command</span></h1>
+<header>
+    <div class="logo">
+        <div class="logo-icon">🚑</div>
+        <div>
+            <h1>NAVPATH</h1>
+            <span>CITY COMMAND CENTER</span>
         </div>
-        <div id="connection-status" class="text-sm text-green-400 font-mono">● LIVE SYSTEM</div>
-    </header>
+    </div>
+    <div class="header-right">
+        <div id="clock">--:--:--</div>
+        <div class="live-badge"><div class="live-dot"></div><span id="conn-status">CONNECTING</span></div>
+    </div>
+</header>
 
-    <main class="flex-1 p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        
-        <div class="lg:col-span-2 flex flex-col gap-4">
-            <div class="bg-slate-800 p-1 rounded-xl shadow-lg">
-                <div id="map"></div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <p class="text-slate-400 text-xs uppercase tracking-wider">Active Overrides</p>
-                    <p id="stat-overrides" class="text-3xl font-bold text-red-400 mt-1">0</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <p class="text-slate-400 text-xs uppercase tracking-wider">Total Trips</p>
-                    <p id="stat-trips" class="text-3xl font-bold text-blue-400 mt-1">0</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <p class="text-slate-400 text-xs uppercase tracking-wider">Hardware Status</p>
-                    <p class="text-lg font-bold text-green-400 mt-2">INT-1 Online</p>
-                </div>
-            </div>
+<main>
+    <!-- LEFT -->
+    <div class="left-col">
+        <div class="map-wrap">
+            <div class="map-label">🛰 LIVE GRID — CHITKARA AREA</div>
+            <div id="map"></div>
         </div>
 
-        <div class="flex flex-col gap-4">
-            
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 flex-1">
-                <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-700 pb-2">Active Units</h2>
-                <div id="ambulance-list" class="text-slate-400 text-sm italic">Waiting for GPS signal...</div>
+        <div class="stat-strip">
+            <div class="stat-card s-red">
+                <p class="label">Active Overrides</p>
+                <p class="value" id="stat-overrides">0</p>
             </div>
-
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 flex-1">
-                <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 border-b border-slate-700 pb-2">Grid Status</h2>
-                <div id="intersection-list" class="flex flex-col gap-3">
-                    </div>
+            <div class="stat-card s-blue">
+                <p class="label">Total Trips</p>
+                <p class="value" id="stat-trips">0</p>
             </div>
-
-            <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 h-64 flex flex-col">
-                <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">System Logs</h2>
-                <div id="log-container" class="flex-1 flex flex-col gap-2 font-mono text-xs text-slate-400">
-                    <div>[SYS] Connecting to NavPath Cloud...</div>
-                </div>
+            <div class="stat-card s-green">
+                <p class="label">Total Resumes</p>
+                <p class="value" id="stat-resumes">0</p>
+            </div>
+            <div class="stat-card s-warn">
+                <p class="label">Hardware</p>
+                <p class="value" style="font-size:14px;padding-top:4px">INT-1 ✓</p>
             </div>
         </div>
-    </main>
+    </div>
 
-    <script>
-        // 1. Initialize Map (Centered on Chandigarh)
-        // Change this line:
-        const map = L.map('map').setView([30.7500, 76.7800], 13);
-// To this line (Chitkara coordinates, zoomed in closer):
-        const map = L.map('map').setView([30.5161, 76.6598], 15);
-        
-        // Dark Mode Map Tiles (CartoDB)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO'
-        }).addTo(map);
+    <!-- RIGHT -->
+    <div class="right-col">
+        <!-- Active Units -->
+        <div class="panel" style="flex:0 0 auto">
+            <div class="panel-head">
+                Active Units
+                <span class="count" id="amb-count">0</span>
+            </div>
+            <div class="panel-body" id="ambulance-list">
+                <div class="empty">Waiting for GPS signal...</div>
+            </div>
+        </div>
 
-        // Icons & Markers
-        const ambIcon = L.divIcon({ className: 'pulse-icon', iconSize: 1});
-        let intMarkers = {};
-        let ambMarkers = {};
+        <!-- Grid Status -->
+        <div class="panel" style="flex:0 0 auto">
+            <div class="panel-head">
+                Grid Status
+                <span class="count" id="int-count">0</span>
+            </div>
+            <div class="panel-body" id="intersection-list"></div>
+        </div>
 
-        // 2. Connect to Flask Server via Socket.IO
-        const socket = io({ transports: ['websocket', 'polling'] }); // Automatically connects to the host serving this page
+        <!-- System Logs -->
+        <div class="panel" style="flex:1">
+            <div class="panel-head">System Logs</div>
+            <div id="log-container">
+                <div class="log-info">[SYS] Connecting to NavPath Cloud...</div>
+            </div>
+        </div>
+    </div>
+</main>
 
-        // Helper: Add log entry
-        function logEvent(msg, isAlert=false) {
-            const container = document.getElementById('log-container');
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            const color = isAlert ? 'text-red-400' : 'text-slate-400';
-            container.innerHTML += `<div class="${color}">[${time}] ${msg}</div>`;
-            container.scrollTop = container.scrollHeight;
+<script>
+// ── Clock ──────────────────────────────────────────
+setInterval(() => {
+    document.getElementById('clock').textContent =
+        new Date().toLocaleTimeString('en-IN', { hour12: false });
+}, 1000);
+
+// ── Map Init — Chitkara University Gate ────────────
+const MAP_CENTER = [30.5161, 76.6598];
+const map = L.map('map', { zoomControl: true }).setView(MAP_CENTER, 14);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    maxZoom: 19
+}).addTo(map);
+
+// ── Icons ───────────────────────────────────────────
+function makeAmbIcon() {
+    return L.divIcon({
+        className: '',
+        html: '<div class="amb-pulse"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+}
+
+function makeIntIcon(state) {
+    const color = state === 'OVERRIDE' ? '#ff3b5c' : '#00ff9d';
+    const glow  = state === 'OVERRIDE' ? 'rgba(255,59,92,.5)' : 'rgba(0,255,157,.3)';
+    return L.divIcon({
+        className: '',
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};
+                    border:2px solid white;
+                    box-shadow:0 0 8px ${glow}"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+    });
+}
+
+// ── State ───────────────────────────────────────────
+let intMarkers = {};   // id → L.marker
+let ambMarkers = {};   // amb_id → L.marker
+let ambData    = {};   // amb_id → latest analytics
+
+// ── Socket.IO ───────────────────────────────────────
+const socket = io({ transports: ['websocket', 'polling'] });
+
+socket.on('connect', () => {
+    document.getElementById('conn-status').textContent = 'LIVE SYSTEM';
+    logMsg('Connection established.', 'log-ok');
+});
+socket.on('disconnect', () => {
+    document.getElementById('conn-status').textContent = 'DISCONNECTED';
+    logMsg('Connection lost — reconnecting...', 'log-alert');
+});
+
+// ── INIT — draw all intersections on connect ────────
+socket.on('init', (data) => {
+    logMsg('Grid configuration loaded.', 'log-info');
+
+    // Map centre override from server if provided
+    if (data.map_center) {
+        map.setView([data.map_center.lat, data.map_center.lon], data.map_center.zoom || 14);
+    }
+
+    buildIntersectionUI(data.intersections);
+    updateStats(data.stats);
+
+    // Restore any already-active ambulances (page refresh scenario)
+    if (data.ambulances && data.ambulances.length) {
+        data.ambulances.forEach(a => {
+            if (a.lat && a.lon) placeAmbulance(a.id || a.amb_id, a.lat, a.lon,
+                                               a.priority || 'NONE', a.route_id || '');
+        });
+    }
+});
+
+// ── ANALYTICS — live position + state updates ───────
+socket.on('analytics', (data) => {
+    if (!data.lat || !data.lon) return;
+
+    ambData[data.amb_id] = data;
+
+    // Place or move ambulance marker
+    placeAmbulance(data.amb_id, data.lat, data.lon, data.priority, data.route_name || data.route_id);
+
+    // Update ambulance sidebar
+    renderAmbulanceList();
+
+    // Update intersection badges + map markers
+    if (data.intersections && data.intersections.length) {
+        updateIntersections(data.intersections);
+    }
+
+    updateStats(data.stats);
+});
+
+// ── EVENTS — system log feed ─────────────────────────
+socket.on('event', (evt) => {
+    const cls = (evt.type === 'OVERRIDE' || evt.type === 'MANUAL_OVERRIDE')
+        ? 'log-alert'
+        : (evt.type === 'RESUME' || evt.type === 'TRIP_COMPLETE' ? 'log-ok' : 'log-normal');
+    logMsg(`[${evt.type}] ${evt.message}`, cls);
+});
+
+socket.on('trip_ended', (d) => {
+    delete ambData[d.amb_id];
+    if (ambMarkers[d.amb_id]) {
+        map.removeLayer(ambMarkers[d.amb_id]);
+        delete ambMarkers[d.amb_id];
+    }
+    renderAmbulanceList();
+    logMsg(`[TRIP_END] ${d.amb_id} trip ended.`, 'log-ok');
+});
+
+// ── Helper: place / move ambulance marker ───────────
+function placeAmbulance(ambId, lat, lon, priority, routeName) {
+    if (!ambMarkers[ambId]) {
+        ambMarkers[ambId] = L.marker([lat, lon], { icon: makeAmbIcon(), zIndexOffset: 1000 })
+            .addTo(map)
+            .bindPopup(`<b>🚑 ${ambId}</b><br>Priority: ${priority || '—'}<br>Route: ${routeName || '—'}`);
+        logMsg(`Ambulance ${ambId} detected on grid.`, 'log-info');
+    } else {
+        ambMarkers[ambId].setLatLng([lat, lon]);
+        ambMarkers[ambId].setPopupContent(
+            `<b>🚑 ${ambId}</b><br>Priority: ${priority || '—'}<br>Route: ${routeName || '—'}`
+        );
+    }
+    // Pan map to follow ambulance
+    map.panTo([lat, lon], { animate: true, duration: 0.6 });
+}
+
+// ── Helper: build intersection UI (called once on init) ──
+function buildIntersectionUI(intersections) {
+    const list = document.getElementById('intersection-list');
+    list.innerHTML = '';
+    document.getElementById('int-count').textContent = intersections.length;
+
+    intersections.forEach(tl => {
+        // Map marker
+        if (intMarkers[tl.id]) map.removeLayer(intMarkers[tl.id]);
+        intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
+            icon: makeIntIcon(tl.state),
+            zIndexOffset: 500
+        }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}`);
+
+        // Sidebar row
+        const hw = tl.hardware ? `<span class="hw-chip">ESP32</span>` : '';
+        const row = document.createElement('div');
+        row.className = 'int-row';
+        row.id = `row-${tl.id}`;
+        row.innerHTML = `
+            <div class="int-info">
+                <div class="int-id">${tl.id}${hw}</div>
+                <div class="int-name">${tl.name}</div>
+            </div>
+            <div id="badge-${tl.id}" class="state-badge st-${tl.state || 'NORMAL'}">${tl.state || 'NORMAL'}</div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+// ── Helper: update intersection states live ──────────
+function updateIntersections(intersections) {
+    intersections.forEach(tl => {
+        // Update sidebar badge
+        const badge = document.getElementById(`badge-${tl.id}`);
+        if (badge) {
+            const st = tl.state || 'NORMAL';
+            badge.className = `state-badge st-${st}`;
+            badge.textContent = st === 'OVERRIDE' ? 'OVERRIDE' : 'NORMAL';
         }
 
-        // 3. Handle Initial Data Load
-        socket.on('init', (data) => {
-            logEvent("Grid configuration loaded.");
-            
-            // Draw Intersections on Map & Sidebar
-            const intList = document.getElementById('intersection-list');
-            intList.innerHTML = '';
+        // Update map marker icon (rebuild on state change)
+        if (intMarkers[tl.id]) {
+            intMarkers[tl.id].setIcon(makeIntIcon(tl.state));
+            intMarkers[tl.id].setPopupContent(
+                `<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}`
+                + (tl.locked_by ? `<br>Locked by: ${tl.locked_by}` : '')
+                + (tl.distance  ? `<br>Distance: ${tl.distance}m` : '')
+            );
+        } else {
+            // Intersection not yet on map (e.g. loaded after init) — add it
+            intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
+                icon: makeIntIcon(tl.state),
+                zIndexOffset: 500
+            }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}`);
 
-            data.intersections.forEach(tl => {
-                // Map Marker
-                let color = tl.state === "OVERRIDE" ? "red" : "#3b82f6"; // Red or Blue
-                intMarkers[tl.id] = L.circleMarker([tl.lat, tl.lon], {
-                    radius: 8, color: color, fillColor: color, fillOpacity: 0.8
-                }).addTo(map).bindPopup(`<b>${tl.name}</b><br>State: ${tl.state}`);
-
-                // Sidebar UI
-                let badge = tl.state === "NORMAL" 
-                    ? `<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs border border-green-500/30">NORMAL</span>`
-                    : `<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs border border-red-500/30">OVERRIDE (Locked)</span>`;
-                
-                let hwBadge = tl.hardware ? `<span class="text-[10px] bg-slate-700 px-1 rounded ml-2">ESP32</span>` : "";
-
-                intList.innerHTML += `
-                    <div class="flex justify-between items-center p-2 hover:bg-slate-700/50 rounded transition-colors" id="ui-${tl.id}">
-                        <div>
-                            <p class="font-bold text-slate-200 text-sm">${tl.id} ${hwBadge}</p>
-                            <p class="text-xs text-slate-400">${tl.name}</p>
-                        </div>
-                        <div id="badge-${tl.id}">${badge}</div>
+            // Also add sidebar row if missing
+            if (!document.getElementById(`badge-${tl.id}`)) {
+                const list = document.getElementById('intersection-list');
+                const hw   = tl.hardware ? `<span class="hw-chip">ESP32</span>` : '';
+                const row  = document.createElement('div');
+                row.className = 'int-row';
+                row.id = `row-${tl.id}`;
+                row.innerHTML = `
+                    <div class="int-info">
+                        <div class="int-id">${tl.id}${hw}</div>
+                        <div class="int-name">${tl.name}</div>
                     </div>
+                    <div id="badge-${tl.id}" class="state-badge st-${tl.state || 'NORMAL'}">${tl.state || 'NORMAL'}</div>
                 `;
-            });
-
-            // Update stats
-            document.getElementById('stat-overrides').innerText = data.stats.total_overrides;
-            document.getElementById('stat-trips').innerText = data.stats.total_trips;
-        });
-
-        // 4. Handle Live Ambulance Analytics Stream
-        socket.on('analytics', (data) => {
-            // Update or Create Ambulance Marker
-            if (!ambMarkers[data.amb_id]) {
-                ambMarkers[data.amb_id] = L.marker([data.lat, data.lon], {icon: ambIcon}).addTo(map);
-                logEvent(`Ambulance ${data.amb_id} detected on grid.`);
-            } else {
-                ambMarkers[data.amb_id].setLatLng([data.lat, data.lon]);
-                map.panTo([data.lat, data.lon]);
+                list.appendChild(row);
+                document.getElementById('int-count').textContent =
+                    document.querySelectorAll('.int-row').length;
             }
+        }
+    });
+}
 
-            // Update Sidebar Ambulance UI
-            document.getElementById('ambulance-list').innerHTML = `
-                <div class="bg-slate-700/30 p-3 rounded-lg border border-slate-600">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-white flex items-center gap-2">🚑 ${data.amb_id}</span>
-                        <span class="${data.priority === 'RED' ? 'text-red-400' : 'text-yellow-400'} text-xs font-bold border border-current px-1 rounded">${data.priority}</span>
-                    </div>
-                    <div class="text-xs text-slate-400 grid grid-cols-2 gap-2 mt-2">
-                        <div><span class="block text-[10px] uppercase">Speed</span><span class="text-slate-200">${Math.round(data.speed)} km/h</span></div>
-                        <div><span class="block text-[10px] uppercase">Dest ETA</span><span class="text-slate-200">${Math.round(data.eta_seconds / 60)} min</span></div>
-                    </div>
-                    <div class="mt-3 pt-2 border-t border-slate-600/50">
-                        <span class="block text-[10px] uppercase text-slate-400">Current Route</span>
-                        <span class="text-xs text-blue-300">${data.route_name}</span>
-                    </div>
+// ── Helper: render ambulance sidebar ─────────────────
+function renderAmbulanceList() {
+    const el    = document.getElementById('ambulance-list');
+    const ids   = Object.keys(ambData);
+    document.getElementById('amb-count').textContent = ids.length;
+
+    if (!ids.length) {
+        el.innerHTML = '<div class="empty">Waiting for GPS signal...</div>';
+        return;
+    }
+
+    el.innerHTML = ids.map(id => {
+        const d   = ambData[id];
+        const pri = d.priority || 'NONE';
+        const eta = d.eta_seconds ? Math.round(d.eta_seconds / 60) : '--';
+        const spd = d.speed ? Math.round(d.speed) : 0;
+        return `
+        <div class="amb-card">
+            <div class="amb-card-top">
+                <span class="amb-id">🚑 ${id}</span>
+                <span class="pri-badge pri-${pri}">${pri}</span>
+            </div>
+            <div class="amb-grid">
+                <div class="amb-stat">
+                    <div class="lbl">Speed</div>
+                    <div class="val">${spd} km/h</div>
                 </div>
-            `;
+                <div class="amb-stat">
+                    <div class="lbl">ETA</div>
+                    <div class="val">${eta} min</div>
+                </div>
+                <div class="amb-stat">
+                    <div class="lbl">Dist to Dest</div>
+                    <div class="val">${d.dest_dist_m ? Math.round(d.dest_dist_m/1000*10)/10+'km' : '--'}</div>
+                </div>
+                <div class="amb-stat">
+                    <div class="lbl">Active Int</div>
+                    <div class="val">${d.active_int_idx !== undefined ? 'INT-'+(d.active_int_idx+1) : '--'}</div>
+                </div>
+            </div>
+            <div class="amb-route">📍 ${d.route_name || d.route_id || 'No route'}</div>
+        </div>`;
+    }).join('');
+}
 
-            // Update Intersection UI States based on geofence logic
-            data.intersections.forEach(tl => {
-                let badgeEl = document.getElementById(`badge-${tl.id}`);
-                let marker = intMarkers[tl.id];
-                
-                if (tl.locked_by === data.amb_id) {
-                    if(badgeEl) badgeEl.innerHTML = `<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs border border-red-500/30 animate-pulse">OVERRIDE ACTIVE</span>`;
-                    if(marker) marker.setStyle({color: '#ef4444', fillColor: '#ef4444'});
-                } else {
-                    if(badgeEl) badgeEl.innerHTML = `<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs border border-green-500/30">NORMAL</span>`;
-                    if(marker) marker.setStyle({color: '#3b82f6', fillColor: '#3b82f6'});
-                }
-            });
+// ── Helper: update stats strip ───────────────────────
+function updateStats(s) {
+    if (!s) return;
+    document.getElementById('stat-overrides').textContent = s.total_overrides ?? 0;
+    document.getElementById('stat-trips').textContent     = s.total_trips     ?? 0;
+    document.getElementById('stat-resumes').textContent   = s.total_resumes   ?? 0;
+}
 
-            // Update stats
-            document.getElementById('stat-overrides').innerText = data.stats.total_overrides;
-        });
+// ── Helper: log message ───────────────────────────────
+function logMsg(msg, cls = 'log-normal') {
+    const c    = document.getElementById('log-container');
+    const time = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    const d    = document.createElement('div');
+    d.className = cls;
+    d.textContent = `[${time}] ${msg}`;
+    c.appendChild(d);
+    // Keep last 200 entries
+    while (c.children.length > 200) c.removeChild(c.firstChild);
+    c.scrollTop = c.scrollHeight;
+}
 
-        // 5. Handle Live Events (Logs)
-        socket.on('event', (evt) => {
-            const isAlert = evt.type === "OVERRIDE" || evt.type === "MANUAL_OVERRIDE";
-            logEvent(`${evt.type}: ${evt.message}`, isAlert);
-        });
-
-    </script>
+// ── REST fallback: load map data if socket init is slow ─
+fetch('/api/map_data')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+        if (!data) return;
+        if (!Object.keys(intMarkers).length) {
+            buildIntersectionUI(data.intersections);
+        }
+        if (data.center) {
+            map.setView([data.center.lat, data.center.lon], data.center.zoom || 14);
+        }
+    })
+    .catch(() => {});   // silent — socket will cover it
+</script>
 </body>
 </html>
