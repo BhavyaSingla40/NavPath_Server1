@@ -77,7 +77,7 @@ HARDWARE_CONTROLLED = {"INT-1"}
 # ─────────────────────────────────────────────
 #  INTERSECTION DATABASE
 # ─────────────────────────────────────────────
-intersections = {
+INTERSECTIONS = {
     "INT-1": {
         "id": "INT-1",
         "name": "Chitkara University Gate", # Updated Name
