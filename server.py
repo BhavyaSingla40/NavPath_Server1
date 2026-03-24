@@ -72,7 +72,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 #    client.subscribe("navpath/test/cmd")
 # ─────────────────────────────────────────────
 MQTT_BROKER    = 'broker.hivemq.com'
-MQTT_PORT      = 1883
+MQTT_PORT      = 8000
 MQTT_CMD_TOPIC = 'navpath/test/cmd'   # Must match ESP32 subscribe topic exactly
 
 # ─────────────────────────────────────────────
@@ -735,7 +735,8 @@ def watchdog():
 # ─────────────────────────────────────────────
 def start_mqtt():
     try:
-        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=30)
+        mqtt_client.ws_set_options(path="/mqtt")
+        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=30, transport="websockets")
         mqtt_client.loop_start()
         log.info(f"Connecting to MQTT at {MQTT_BROKER}:{MQTT_PORT}")
     except Exception as e:
