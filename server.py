@@ -527,10 +527,34 @@ def receive_gps():
     })
 
     if route_id and priority != "NONE":
+        # This function handles the logic to trigger the physical lights
         process_gps_update(amb_id, lat, lon, speed, priority, route_id)
 
-    return jsonify({"status": "ok", "ts": time.time()})
+    # THE FIX: Broadcast the live data to the Command Center dashboard!
+    # We use list(intersections.values()) so the map knows if the light is GREEN or RED
+    socketio.emit('analytics', {
+        'amb_id': amb_id,
+        'lat': lat,
+        'lon': lon,
+        'speed': speed,
+        'priority': priority,
+        'eta_seconds': 180, 
+        'route_name': route_id,
+        'intersections': list(intersections.values()) if 'intersections' in globals() else [
+            {
+                'id': 'INT-1',
+                'name': 'Sector 16 Chowk',
+                'state': 'NORMAL', 
+                'lat': 30.7490,    
+                'lon': 76.7750,
+                'locked_by': None,
+                'hardware': True
+            }
+        ],
+        'stats': stats
+    })
 
+    return jsonify({"status": "ok", "ts": time.time()})
 @app.route('/api/assign_route', methods=['POST'])
 def assign_route():
     data     = request.get_json()
