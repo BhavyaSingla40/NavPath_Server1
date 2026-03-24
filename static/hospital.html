@@ -90,7 +90,10 @@
 
     <script>
         // 1. Initialize Map (Centered on Chandigarh)
+        // Change this line:
         const map = L.map('map').setView([30.7500, 76.7800], 13);
+// To this line (Chitkara coordinates, zoomed in closer):
+        const map = L.map('map').setView([30.5161, 76.6598], 15);
         
         // Dark Mode Map Tiles (CartoDB)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
