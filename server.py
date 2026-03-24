@@ -576,7 +576,7 @@ def on_ws_connect():
     emit('init', {
         "routes":        list(ROUTES.values()),
         "intersections": [
-            {**tl, "state": intersection_states[tid]}
+            {**tl, "state": intersection_states[tid]["state"]}
             for tid, tl in INTERSECTIONS.items()
         ],
         "ambulances":    list(ambulances.values()),
