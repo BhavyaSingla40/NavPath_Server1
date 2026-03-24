@@ -106,7 +106,7 @@
         let ambMarkers = {};
 
         // 2. Connect to Flask Server via Socket.IO
-        const socket = io(); // Automatically connects to the host serving this page
+        const socket = io({ transports: ['websocket', 'polling'] }); // Automatically connects to the host serving this page
 
         // Helper: Add log entry
         function logEvent(msg, isAlert=false) {
