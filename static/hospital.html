@@ -394,24 +394,21 @@ margin-top:3px;
 
 
 <div class="nav-tabs">
-
-<button class="tab-btn active">
-DISPATCH
-</button>
-
-<button class="tab-btn" onclick="showTab('requests')">
-REQUESTS
-</button>
-
-<button class="tab-btn">
-FLEET
-</button>
-
-<button class="tab-btn">
-SYSTEM
-</button>
-
+    <button class="tab-btn active" onclick="showTab('dispatch')">
+        DISPATCH
+    </button>
+    <button class="tab-btn" onclick="showTab('requests')">
+        REQUESTS
+    </button>
+    <button class="tab-btn" onclick="showTab('fleet')">
+        FLEET
+    </button>
+    <button class="tab-btn" onclick="showTab('system')">
+        SYSTEM
+    </button>
 </div>
+
+
 
 
 <div class="header-right">
@@ -939,18 +936,24 @@ fetch('/api/map_data')
     })
     .catch(() => {});   // silent — socket will cover it
         // STEP 8
-function showTab(tab){
 
-document.getElementById("requests-panel")
-.classList.add("hidden")
-
-if(tab==="requests"){
-
-document.getElementById("requests-panel")
-.classList.remove("hidden")
-
-}
-
+function showTab(tab) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Hide all panels (add more as needed)
+    document.getElementById("requests-panel").classList.add("hidden");
+    
+    // Show selected tab
+    if(tab === "requests") {
+        document.getElementById("requests-panel").classList.remove("hidden");
+        loadRequests(); // Refresh requests
+    }
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
 }
 </script>
 </body>
