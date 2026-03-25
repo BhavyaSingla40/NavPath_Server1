@@ -547,6 +547,87 @@ supabase.channel("live-dashboard")
 
 .subscribe()
 
+    // STEP 5
+async function loadRequests(){
+
+const { data } = await supabase
+.from("emergency_requests")
+.select("*")
+.eq("status","pending")
+.order("created_at",{ascending:false})
+
+document.getElementById("req-count").textContent = data.length
+
+const container = document.getElementById("request-list")
+
+if(!data.length){
+
+container.innerHTML =
+'<div class="empty">No active requests</div>'
+
+return
+}
+
+container.innerHTML = data.map(r=>`
+
+<div class="request-card">
+
+<div class="req-title">
+${r.patient_name || "Unknown"}
+</div>
+
+<div class="req-meta">
+📍 ${r.location}
+</div>
+
+<div class="req-meta">
+Priority: ${r.priority}
+</div>
+
+<button onclick="acceptRequest('${r.id}')">
+Dispatch
+</button>
+
+</div>
+
+`).join("")
+
+}
+
+        // STEP 6
+async function acceptRequest(id){
+
+await supabase
+.from("emergency_requests")
+.update({status:"accepted"})
+.eq("id",id)
+
+await supabase
+.from("emergencies")
+.insert({status:"active"})
+
+loadRequests()
+
+}
+
+        supabase.channel("live-dashboard")
+            // STEP 7
+supabase.channel("requests-live")
+
+.on(
+"postgres_changes",
+{event:"*", schema:"public", table:"emergency_requests"},
+loadRequests
+)
+
+.subscribe()
+
+loadRequests()
+
+    
+
+    
+
 
 
 <script>
@@ -838,6 +919,20 @@ fetch('/api/map_data')
         }
     })
     .catch(() => {});   // silent — socket will cover it
+        // STEP 8
+function showTab(tab){
+
+document.getElementById("requests-panel")
+.classList.add("hidden")
+
+if(tab==="requests"){
+
+document.getElementById("requests-panel")
+.classList.remove("hidden")
+
+}
+
+}
 </script>
 </body>
 </html>
