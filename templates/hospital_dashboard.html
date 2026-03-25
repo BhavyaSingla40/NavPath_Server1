@@ -8,1398 +8,1325 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- [INTEGRATION] Socket.IO client — connects to server.py WebSocket -->
 <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 <style>
-  :root {
-    --bg-deep: #080c14;
-    --bg-panel: #0d1520;
-    --bg-card: #111b2a;
-    --bg-hover: #162030;
-    --border: #1e2e42;
-    --border-bright: #2a4060;
-    --accent-blue: #0ea5e9;
-    --accent-cyan: #06d6c7;
-    --red: #ef4444;
-    --red-dim: #7f1d1d;
-    --orange: #f97316;
-    --yellow: #eab308;
-    --green: #22c55e;
-    --green-dim: #14532d;
-    --text-primary: #e2eaf4;
-    --text-secondary: #6b8aaa;
-    --text-mono: #7dd3fc;
-    --glow-blue: 0 0 20px rgba(14,165,233,0.3);
-    --glow-green: 0 0 20px rgba(34,197,94,0.3);
-    --glow-red: 0 0 20px rgba(239,68,68,0.4);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px;
-    overflow: hidden;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  /* TOP BAR */
-  .topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; height: 52px;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0; position: relative; z-index: 100;
-  }
-  .topbar::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-cyan), transparent);
-  }
-  .logo { display:flex; align-items:center; gap:10px; }
-  .logo-mark {
-    width:32px; height:32px;
-    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; font-weight:700; color:#fff;
-  }
-  .logo-text { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; letter-spacing:2px; color:var(--text-primary); }
-  .logo-sub { font-size:10px; color:var(--text-secondary); letter-spacing:3px; text-transform:uppercase; margin-top:-2px; }
-  .topbar-center { display:flex; gap:4px; }
-  .tab-btn {
-    padding:6px 16px; background:transparent; border:1px solid transparent;
-    border-radius:4px; color:var(--text-secondary); cursor:pointer;
-    font-family:'Barlow',sans-serif; font-size:12px; font-weight:600;
-    letter-spacing:0.5px; text-transform:uppercase; transition:all 0.2s;
-  }
-  .tab-btn:hover { color:var(--text-primary); border-color:var(--border-bright); }
-  .tab-btn.active { background:rgba(14,165,233,0.12); border-color:var(--accent-blue); color:var(--accent-blue); }
-  .topbar-right { display:flex; align-items:center; gap:20px; }
-  .time-display { font-family:'Share Tech Mono',monospace; font-size:18px; color:var(--accent-cyan); letter-spacing:2px; }
-  .sys-status { display:flex; gap:12px; align-items:center; }
-  .sys-dot { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); }
-  .dot { width:8px; height:8px; border-radius:50%; animation:pulse 2s infinite; }
-  .dot.green { background:var(--green); box-shadow:0 0 6px var(--green); }
-  .dot.red { background:var(--red); box-shadow:0 0 6px var(--red); }
-  .dot.yellow { background:var(--yellow); box-shadow:0 0 6px var(--yellow); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  :root {
+    --bg-deep: #080c14;
+    --bg-panel: #0d1520;
+    --bg-card: #111b2a;
+    --bg-hover: #162030;
+    --border: #1e2e42;
+    --border-bright: #2a4060;
+    --accent-blue: #0ea5e9;
+    --accent-cyan: #06d6c7;
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --orange: #f97316;
+    --yellow: #eab308;
+    --green: #22c55e;
+    --green-dim: #14532d;
+    --text-primary: #e2eaf4;
+    --text-secondary: #6b8aaa;
+    --text-mono: #7dd3fc;
+    --glow-blue: 0 0 20px rgba(14,165,233,0.3);
+    --glow-green: 0 0 20px rgba(34,197,94,0.3);
+    --glow-red: 0 0 20px rgba(239,68,68,0.4);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; height: 52px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0; position: relative; z-index: 100;
+  }
+  .topbar::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-cyan), transparent);
+  }
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-mark {
+    width:32px; height:32px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; color:#fff;
+  }
+  .logo-text { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; letter-spacing:2px; color:var(--text-primary); }
+  .logo-sub { font-size:10px; color:var(--text-secondary); letter-spacing:3px; text-transform:uppercase; margin-top:-2px; }
+  .topbar-center { display:flex; gap:4px; }
+  .tab-btn {
+    padding:6px 16px; background:transparent; border:1px solid transparent;
+    border-radius:4px; color:var(--text-secondary); cursor:pointer;
+    font-family:'Barlow',sans-serif; font-size:12px; font-weight:600;
+    letter-spacing:0.5px; text-transform:uppercase; transition:all 0.2s;
+  }
+  .tab-btn:hover { color:var(--text-primary); border-color:var(--border-bright); }
+  .tab-btn.active { background:rgba(14,165,233,0.12); border-color:var(--accent-blue); color:var(--accent-blue); }
+  .topbar-right { display:flex; align-items:center; gap:20px; }
+  .time-display { font-family:'Share Tech Mono',monospace; font-size:18px; color:var(--accent-cyan); letter-spacing:2px; }
+  .sys-status { display:flex; gap:12px; align-items:center; }
+  .sys-dot { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); }
+  .dot { width:8px; height:8px; border-radius:50%; animation:pulse 2s infinite; }
+  .dot.green { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .dot.red { background:var(--red); box-shadow:0 0 6px var(--red); }
+  .dot.yellow { background:var(--yellow); box-shadow:0 0 6px var(--yellow); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-  /* ALERT BANNERS */
-  .alert-area { flex-shrink:0; display:flex; flex-direction:column; gap:2px; background:var(--bg-panel); }
-  .alert-banner {
-    display:flex; align-items:center; gap:10px;
-    padding:6px 20px; font-size:12px; font-weight:600; letter-spacing:0.3px;
-    animation:slideDown 0.3s ease;
-  }
-  .alert-banner.red { background:rgba(239,68,68,0.15); border-left:3px solid var(--red); color:#fca5a5; }
-  .alert-banner.orange { background:rgba(249,115,22,0.15); border-left:3px solid var(--orange); color:#fdba74; }
-  .alert-banner .close-alert { margin-left:auto; cursor:pointer; opacity:0.6; }
-  .alert-banner .close-alert:hover { opacity:1; }
-  @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+  /* ALERT BANNERS */
+  .alert-area { flex-shrink:0; display:flex; flex-direction:column; gap:2px; background:var(--bg-panel); }
+  .alert-banner {
+    display:flex; align-items:center; gap:10px;
+    padding:6px 20px; font-size:12px; font-weight:600; letter-spacing:0.3px;
+    animation:slideDown 0.3s ease;
+  }
+  .alert-banner.red { background:rgba(239,68,68,0.15); border-left:3px solid var(--red); color:#fca5a5; }
+  .alert-banner.orange { background:rgba(249,115,22,0.15); border-left:3px solid var(--orange); color:#fdba74; }
+  .alert-banner .close-alert { margin-left:auto; cursor:pointer; opacity:0.6; }
+  .alert-banner .close-alert:hover { opacity:1; }
+  @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
 
-  /* SAVINGS BAR */
-  .savings-bar {
-    background:linear-gradient(90deg, rgba(6,214,199,0.08), rgba(14,165,233,0.05));
-    border-bottom:1px solid rgba(6,214,199,0.2);
-    padding:5px 20px; display:flex; align-items:center; gap:30px; flex-shrink:0;
-  }
-  .savings-item { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); }
-  .savings-num { font-family:'Share Tech Mono',monospace; font-size:20px; color:var(--accent-cyan); font-weight:700; }
-  .savings-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; }
+  /* SAVINGS BAR */
+  .savings-bar {
+    background:linear-gradient(90deg, rgba(6,214,199,0.08), rgba(14,165,233,0.05));
+    border-bottom:1px solid rgba(6,214,199,0.2);
+    padding:5px 20px; display:flex; align-items:center; gap:30px; flex-shrink:0;
+  }
+  .savings-item { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); }
+  .savings-num { font-family:'Share Tech Mono',monospace; font-size:20px; color:var(--accent-cyan); font-weight:700; }
+  .savings-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; }
 
-  /* MAIN LAYOUT */
-  .main-layout { display:flex; flex:1; overflow:hidden; }
+  /* MAIN LAYOUT */
+  .main-layout { display:flex; flex:1; overflow:hidden; }
 
-  /* LEFT PANEL */
-  .left-panel {
-    width:300px; flex-shrink:0; background:var(--bg-panel);
-    border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden;
-  }
-  .panel-section { border-bottom:1px solid var(--border); flex-shrink:0; }
-  .panel-header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 14px; cursor:pointer; user-select:none; background:var(--bg-panel);
-  }
-  .panel-header:hover { background:var(--bg-hover); }
-  .panel-title {
-    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
-    letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary);
-    display:flex; align-items:center; gap:8px;
-  }
-  .panel-title .count-badge {
-    background:var(--accent-blue); color:#fff; font-size:10px;
-    padding:1px 6px; border-radius:10px; font-weight:700;
-  }
-  .panel-title .count-badge.red { background:var(--red); }
-  .panel-content { overflow-y:auto; max-height:400px; }
-  .panel-content::-webkit-scrollbar { width:4px; }
-  .panel-content::-webkit-scrollbar-thumb { background:var(--border-bright); border-radius:2px; }
+  /* LEFT PANEL */
+  .left-panel {
+    width:300px; flex-shrink:0; background:var(--bg-panel);
+    border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .panel-section { border-bottom:1px solid var(--border); flex-shrink:0; }
+  .panel-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; cursor:pointer; user-select:none; background:var(--bg-panel);
+  }
+  .panel-header:hover { background:var(--bg-hover); }
+  .panel-title {
+    font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary);
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-title .count-badge {
+    background:var(--accent-blue); color:#fff; font-size:10px;
+    padding:1px 6px; border-radius:10px; font-weight:700;
+  }
+  .panel-title .count-badge.red { background:var(--red); }
+  .panel-content { overflow-y:auto; max-height:400px; }
+  .panel-content::-webkit-scrollbar { width:4px; }
+  .panel-content::-webkit-scrollbar-thumb { background:var(--border-bright); border-radius:2px; }
 
-  /* AMBULANCE CARDS */
-  .amb-card {
-    padding:12px 14px; border-bottom:1px solid var(--border);
-    cursor:pointer; transition:background 0.15s; position:relative;
-  }
-  .amb-card:hover { background:var(--bg-hover); }
-  .amb-card.selected { background:rgba(14,165,233,0.08); }
-  .amb-card::before {
-    content:''; position:absolute; left:0; top:0; bottom:0;
-    width:3px; border-radius:0 2px 2px 0;
-  }
-  .amb-card.priority-red::before { background:var(--red); box-shadow:var(--glow-red); }
-  .amb-card.priority-yellow::before { background:var(--yellow); }
-  .amb-card.priority-green::before { background:var(--green); }
-  .amb-card.priority-none::before { background:var(--text-secondary); }
-  .amb-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .amb-id { font-family:'Share Tech Mono',monospace; font-size:15px; font-weight:700; color:var(--text-primary); }
-  .priority-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:3px; letter-spacing:1px; }
-  .priority-badge.red { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4); }
-  .priority-badge.yellow { background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.4); }
-  .priority-badge.green { background:rgba(34,197,94,0.2); color:#4ade80; border:1px solid rgba(34,197,94,0.4); }
-  .priority-badge.none { background:rgba(107,138,170,0.1); color:var(--text-secondary); border:1px solid var(--border); }
-  .amb-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; }
-  .amb-stat { text-align:center; }
-  .amb-stat-val { font-family:'Share Tech Mono',monospace; font-size:14px; color:var(--text-primary); font-weight:600; }
-  .amb-stat-label { font-size:9px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
-  .amb-info-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; font-size:11px; color:var(--text-secondary); }
-  .amb-info-row span { color:var(--text-primary); }
-  .amb-actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:8px; }
-  .amb-btn {
-    padding:5px 8px; border:1px solid var(--border-bright); background:transparent;
-    color:var(--text-secondary); border-radius:3px; cursor:pointer;
-    font-family:'Barlow',sans-serif; font-size:10px; font-weight:600;
-    text-transform:uppercase; letter-spacing:0.5px; transition:all 0.15s;
-  }
-  .amb-btn:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--accent-blue); }
-  .amb-btn.abort { border-color:rgba(239,68,68,0.3); color:#f87171; }
-  .amb-btn.abort:hover { background:rgba(239,68,68,0.1); border-color:var(--red); }
-  .amb-btn.assign { border-color:rgba(14,165,233,0.3); color:var(--accent-blue); }
-  .amb-btn.assign:hover { background:rgba(14,165,233,0.1); }
-  .empty-state { padding:20px 14px; font-size:11px; color:var(--text-secondary); text-align:center; font-family:'Share Tech Mono',monospace; }
+  /* AMBULANCE CARDS */
+  .amb-card {
+    padding:12px 14px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.15s; position:relative;
+  }
+  .amb-card:hover { background:var(--bg-hover); }
+  .amb-card.selected { background:rgba(14,165,233,0.08); }
+  .amb-card::before {
+    content:''; position:absolute; left:0; top:0; bottom:0;
+    width:3px; border-radius:0 2px 2px 0;
+  }
+  .amb-card.priority-red::before { background:var(--red); box-shadow:var(--glow-red); }
+  .amb-card.priority-yellow::before { background:var(--yellow); }
+  .amb-card.priority-green::before { background:var(--green); }
+  .amb-card.priority-none::before { background:var(--text-secondary); }
+  .amb-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .amb-id { font-family:'Share Tech Mono',monospace; font-size:15px; font-weight:700; color:var(--text-primary); }
+  .priority-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:3px; letter-spacing:1px; }
+  .priority-badge.red { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4); }
+  .priority-badge.yellow { background:rgba(234,179,8,0.2); color:#fde047; border:1px solid rgba(234,179,8,0.4); }
+  .priority-badge.green { background:rgba(34,197,94,0.2); color:#4ade80; border:1px solid rgba(34,197,94,0.4); }
+  .priority-badge.none { background:rgba(107,138,170,0.1); color:var(--text-secondary); border:1px solid var(--border); }
+  .amb-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; }
+  .amb-stat { text-align:center; }
+  .amb-stat-val { font-family:'Share Tech Mono',monospace; font-size:14px; color:var(--text-primary); font-weight:600; }
+  .amb-stat-label { font-size:9px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+  .amb-info-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; font-size:11px; color:var(--text-secondary); }
+  .amb-info-row span { color:var(--text-primary); }
+  .amb-actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:8px; }
+  .amb-btn {
+    padding:5px 8px; border:1px solid var(--border-bright); background:transparent;
+    color:var(--text-secondary); border-radius:3px; cursor:pointer;
+    font-family:'Barlow',sans-serif; font-size:10px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.5px; transition:all 0.15s;
+  }
+  .amb-btn:hover { background:var(--bg-hover); color:var(--text-primary); border-color:var(--accent-blue); }
+  .amb-btn.abort { border-color:rgba(239,68,68,0.3); color:#f87171; }
+  .amb-btn.abort:hover { background:rgba(239,68,68,0.1); border-color:var(--red); }
+  .amb-btn.assign { border-color:rgba(14,165,233,0.3); color:var(--accent-blue); }
+  .amb-btn.assign:hover { background:rgba(14,165,233,0.1); }
+  .empty-state { padding:20px 14px; font-size:11px; color:var(--text-secondary); text-align:center; font-family:'Share Tech Mono',monospace; }
 
-  /* INTERSECTION CARDS */
-  .int-card {
-    padding:10px 14px; border-bottom:1px solid var(--border);
-    cursor:pointer; transition:background 0.15s;
-  }
-  .int-card:hover { background:var(--bg-hover); }
-  .int-card.override-active { background:rgba(239,68,68,0.05); }
-  .int-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  .int-id { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--accent-cyan); }
-  .int-name { font-size:12px; color:var(--text-primary); font-weight:500; margin-bottom:4px; }
-  .int-status-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .phase-indicator { display:flex; gap:3px; }
-  .phase-dot { width:10px; height:10px; border-radius:50%; opacity:0.3; }
-  .phase-dot.active { opacity:1; }
-  .phase-dot.r { background:var(--red); box-shadow:0 0 6px var(--red); }
-  .phase-dot.y { background:var(--yellow); }
-  .phase-dot.g { background:var(--green); box-shadow:0 0 6px var(--green); }
-  .int-override-badge { font-size:10px; padding:1px 8px; border-radius:3px; font-weight:700; letter-spacing:0.5px; }
-  .int-override-badge.active { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); animation:pulse 1s infinite; }
-  .int-override-badge.normal { background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); }
-  .int-override-badge.offline { background:rgba(107,138,170,0.1); color:var(--text-secondary); border:1px solid var(--border); }
-  .power-icon { font-size:11px; display:flex; align-items:center; gap:3px; }
-  .power-icon.main { color:var(--green); }
-  .power-icon.ups { color:var(--orange); }
-  .power-icon.low { color:var(--red); animation:pulse 1s infinite; }
+  /* INTERSECTION CARDS */
+  .int-card {
+    padding:10px 14px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.15s;
+  }
+  .int-card:hover { background:var(--bg-hover); }
+  .int-card.override-active { background:rgba(239,68,68,0.05); }
+  .int-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .int-id { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--accent-cyan); }
+  .int-name { font-size:12px; color:var(--text-primary); font-weight:500; margin-bottom:4px; }
+  .int-status-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .phase-indicator { display:flex; gap:3px; }
+  .phase-dot { width:10px; height:10px; border-radius:50%; opacity:0.3; }
+  .phase-dot.active { opacity:1; }
+  .phase-dot.r { background:var(--red); box-shadow:0 0 6px var(--red); }
+  .phase-dot.y { background:var(--yellow); }
+  .phase-dot.g { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .int-override-badge { font-size:10px; padding:1px 8px; border-radius:3px; font-weight:700; letter-spacing:0.5px; }
+  .int-override-badge.active { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); animation:pulse 1s infinite; }
+  .int-override-badge.normal { background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); }
+  .int-override-badge.offline { background:rgba(107,138,170,0.1); color:var(--text-secondary); border:1px solid var(--border); }
+  .power-icon { font-size:11px; display:flex; align-items:center; gap:3px; }
+  .power-icon.main { color:var(--green); }
+  .power-icon.ups { color:var(--orange); }
+  .power-icon.low { color:var(--red); animation:pulse 1s infinite; }
 
-  /* EVENT LOG */
-  .event-log { flex:1; overflow-y:auto; padding:4px 0; }
-  .event-log::-webkit-scrollbar { width:4px; }
-  .event-log::-webkit-scrollbar-thumb { background:var(--border-bright); }
-  .event-entry {
-    display:flex; gap:10px; align-items:flex-start;
-    padding:5px 14px; border-bottom:1px solid rgba(30,46,66,0.5);
-    animation:fadeIn 0.3s ease; font-size:11px;
-  }
-  @keyframes fadeIn { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
-  .event-time { font-family:'Share Tech Mono',monospace; color:var(--text-secondary); font-size:10px; flex-shrink:0; padding-top:1px; }
-  .event-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:4px; }
-  .event-dot.info { background:var(--accent-blue); }
-  .event-dot.success { background:var(--green); }
-  .event-dot.warning { background:var(--yellow); }
-  .event-dot.alert { background:var(--red); }
-  .event-text { color:var(--text-secondary); line-height:1.5; }
-  .event-text b { color:var(--text-primary); }
-  .log-filters {
-    display:flex; gap:6px; padding:8px 14px;
-    border-bottom:1px solid var(--border); flex-shrink:0;
-  }
-  .log-filter-btn {
-    padding:3px 10px; border:1px solid var(--border); background:transparent;
-    color:var(--text-secondary); border-radius:3px; cursor:pointer;
-    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; transition:all 0.15s;
-  }
-  .log-filter-btn.active { border-color:var(--accent-blue); color:var(--accent-blue); background:rgba(14,165,233,0.08); }
-  .csv-btn {
-    margin-left:auto; padding:3px 10px;
-    border:1px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.08);
-    color:#4ade80; border-radius:3px; cursor:pointer;
-    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
-  }
+  /* EVENT LOG */
+  .event-log { flex:1; overflow-y:auto; padding:4px 0; }
+  .event-log::-webkit-scrollbar { width:4px; }
+  .event-log::-webkit-scrollbar-thumb { background:var(--border-bright); }
+  .event-entry {
+    display:flex; gap:10px; align-items:flex-start;
+    padding:5px 14px; border-bottom:1px solid rgba(30,46,66,0.5);
+    animation:fadeIn 0.3s ease; font-size:11px;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
+  .event-time { font-family:'Share Tech Mono',monospace; color:var(--text-secondary); font-size:10px; flex-shrink:0; padding-top:1px; }
+  .event-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+  .event-dot.info { background:var(--accent-blue); }
+  .event-dot.success { background:var(--green); }
+  .event-dot.warning { background:var(--yellow); }
+  .event-dot.alert { background:var(--red); }
+  .event-text { color:var(--text-secondary); line-height:1.5; }
+  .event-text b { color:var(--text-primary); }
+  .log-filters {
+    display:flex; gap:6px; padding:8px 14px;
+    border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .log-filter-btn {
+    padding:3px 10px; border:1px solid var(--border); background:transparent;
+    color:var(--text-secondary); border-radius:3px; cursor:pointer;
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; transition:all 0.15s;
+  }
+  .log-filter-btn.active { border-color:var(--accent-blue); color:var(--accent-blue); background:rgba(14,165,233,0.08); }
+  .csv-btn {
+    margin-left:auto; padding:3px 10px;
+    border:1px solid rgba(34,197,94,0.3); background:rgba(34,197,94,0.08);
+    color:#4ade80; border-radius:3px; cursor:pointer;
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
+  }
 
-  /* ANALYTICS GRID */
-  .analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
-  .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:12px; }
-  .stat-card-val { font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--accent-cyan); font-weight:700; line-height:1; margin-bottom:4px; }
-  .stat-card-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
-  .stat-card.full { grid-column:1/-1; }
-  .chart-wrap { padding:0 16px 16px; background:var(--bg-panel); }
-  .chart-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:10px; padding-top:12px; }
-  canvas { max-height:160px; }
+  /* ANALYTICS GRID */
+  .analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
+  .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:12px; }
+  .stat-card-val { font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--accent-cyan); font-weight:700; line-height:1; margin-bottom:4px; }
+  .stat-card-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
+  .stat-card.full { grid-column:1/-1; }
+  .chart-wrap { padding:0 16px 16px; background:var(--bg-panel); }
+  .chart-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:10px; padding-top:12px; }
+  canvas { max-height:160px; }
 
-  /* FLEET TABLE */
-  .fleet-table { width:100%; border-collapse:collapse; }
-  .fleet-table th { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-secondary); padding:8px 14px; border-bottom:1px solid var(--border); text-align:left; }
-  .fleet-table td { padding:8px 14px; border-bottom:1px solid rgba(30,46,66,0.5); font-size:12px; color:var(--text-secondary); }
-  .fleet-table td:first-child { font-family:'Share Tech Mono',monospace; color:var(--text-primary); }
+  /* FLEET TABLE */
+  .fleet-table { width:100%; border-collapse:collapse; }
+  .fleet-table th { font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-secondary); padding:8px 14px; border-bottom:1px solid var(--border); text-align:left; }
+  .fleet-table td { padding:8px 14px; border-bottom:1px solid rgba(30,46,66,0.5); font-size:12px; color:var(--text-secondary); }
+  .fleet-table td:first-child { font-family:'Share Tech Mono',monospace; color:var(--text-primary); }
 
-  /* PAGE SYSTEM */
-  .tab-content { display:none; flex:1; overflow:auto; flex-direction:column; }
-  .tab-content.active { display:flex; }
-  .page { display:none; flex:1; overflow:hidden; }
-  .page.active { display:flex; }
-  .main-content { display:flex; flex:1; overflow:hidden; flex-direction:column; }
-  .top-main { display:flex; flex:1; overflow:hidden; }
-  .map-and-log { display:flex; flex-direction:column; flex:1; overflow:hidden; }
-  .log-panel {
-    height:220px; flex-shrink:0; border-top:1px solid var(--border);
-    display:flex; flex-direction:column; background:var(--bg-panel);
-  }
-  .fullpage { display:none; flex:1; overflow:auto; flex-direction:column; }
-  .fullpage.active { display:flex; }
-  .page-title { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-primary); padding:20px 24px 0; flex-shrink:0; }
+  /* PAGE SYSTEM */
+  .tab-content { display:none; flex:1; overflow:auto; flex-direction:column; }
+  .tab-content.active { display:flex; }
+  .page { display:none; flex:1; overflow:hidden; }
+  .page.active { display:flex; }
+  .main-content { display:flex; flex:1; overflow:hidden; flex-direction:column; }
+  .top-main { display:flex; flex:1; overflow:hidden; }
+  .map-and-log { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+  .log-panel {
+    height:220px; flex-shrink:0; border-top:1px solid var(--border);
+    display:flex; flex-direction:column; background:var(--bg-panel);
+  }
+  .fullpage { display:none; flex:1; overflow:auto; flex-direction:column; }
+  .fullpage.active { display:flex; }
+  .page-title { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-primary); padding:20px 24px 0; flex-shrink:0; }
 
-  /* SYSTEM HEALTH */
-  .health-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px; }
-  .health-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:12px; }
-  .health-val { font-family:'Share Tech Mono',monospace; font-size:22px; color:var(--green); margin-bottom:4px; }
-  .health-val.warn { color:var(--yellow); }
-  .health-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
+  /* SYSTEM HEALTH */
+  .health-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px; }
+  .health-card { background:var(--bg-card); border:1px solid var(--border); border-radius:6px; padding:12px; }
+  .health-val { font-family:'Share Tech Mono',monospace; font-size:22px; color:var(--green); margin-bottom:4px; }
+  .health-val.warn { color:var(--yellow); }
+  .health-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; }
 
-  /* MAP */
-  .map-container { flex:1; position:relative; background:#0a1520; }
-  #map { width:100%; height:100%; }
+  /* MAP */
+  .map-container { flex:1; position:relative; background:#0a1520; }
+  #map { width:100%; height:100%; }
 
-  /* RIGHT PANEL */
-  .right-panel { width:320px; flex-shrink:0; background:var(--bg-panel); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
-  .right-scroll { flex:1; overflow-y:auto; }
-  .right-scroll::-webkit-scrollbar { width:4px; }
-  .right-scroll::-webkit-scrollbar-thumb { background:var(--border-bright); }
+  /* RIGHT PANEL */
+  .right-panel { width:320px; flex-shrink:0; background:var(--bg-panel); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+  .right-scroll { flex:1; overflow-y:auto; }
+  .right-scroll::-webkit-scrollbar { width:4px; }
+  .right-scroll::-webkit-scrollbar-thumb { background:var(--border-bright); }
 
-  /* MAP POPUP */
-  .map-popup-info {
-    position:absolute; bottom:20px; left:20px;
-    background:var(--bg-panel); border:1px solid rgba(6,214,199,0.4);
-    border-radius:6px; padding:12px 16px; min-width:260px; z-index:500;
-    box-shadow:0 4px 20px rgba(0,0,0,0.5); animation:popIn 0.3s ease;
-  }
-  @keyframes popIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
-  .map-popup-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--accent-cyan); margin-bottom:8px; }
-  .popup-compare { display:flex; gap:16px; align-items:center; }
-  .popup-val { font-family:'Share Tech Mono',monospace; font-size:22px; }
-  .popup-val.bad { color:var(--red); }
-  .popup-val.good { color:var(--green); }
-  .popup-item-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; }
-  .popup-arrow { color:var(--accent-cyan); font-size:18px; }
+  /* MAP POPUP */
+  .map-popup-info {
+    position:absolute; bottom:20px; left:20px;
+    background:var(--bg-panel); border:1px solid rgba(6,214,199,0.4);
+    border-radius:6px; padding:12px 16px; min-width:260px; z-index:500;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5); animation:popIn 0.3s ease;
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+  .map-popup-title { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--accent-cyan); margin-bottom:8px; }
+  .popup-compare { display:flex; gap:16px; align-items:center; }
+  .popup-val { font-family:'Share Tech Mono',monospace; font-size:22px; }
+  .popup-val.bad { color:var(--red); }
+  .popup-val.good { color:var(--green); }
+  .popup-item-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; }
+  .popup-arrow { color:var(--accent-cyan); font-size:18px; }
 
-  /* MODAL */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(8,12,20,0.85); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--bg-panel); border:1px solid var(--border-bright); border-radius:8px; width:560px; max-height:80vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.6); }
-  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-  .modal-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-primary); }
-  .modal-close { background:none; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer; padding:0 4px; }
-  .modal-close:hover { color:var(--text-primary); }
-  .modal-body { padding:20px; }
-  .form-row { margin-bottom:16px; }
-  .form-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-secondary); margin-bottom:6px; display:block; }
-  .form-select, .form-input { width:100%; background:var(--bg-deep); border:1px solid var(--border-bright); color:var(--text-primary); padding:8px 12px; border-radius:4px; font-family:'Barlow',sans-serif; font-size:13px; appearance:none; cursor:pointer; }
-  .form-select:focus, .form-input:focus { outline:none; border-color:var(--accent-blue); }
-  .route-preview { background:var(--bg-deep); border:1px solid var(--border); border-radius:4px; height:200px; margin-bottom:16px; position:relative; overflow:hidden; }
-  #modalMap { width:100%; height:100%; }
-  .route-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-  .compare-card { background:var(--bg-deep); border:1px solid var(--border); border-radius:4px; padding:10px; text-align:center; }
-  .compare-val { font-family:'Share Tech Mono',monospace; font-size:24px; font-weight:700; margin-bottom:2px; }
-  .compare-val.navpath { color:var(--green); }
-  .compare-val.manual { color:var(--red); }
-  .compare-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
-  .modal-footer { display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border); justify-content:flex-end; }
-  .btn-primary { padding:10px 24px; background:linear-gradient(135deg, var(--accent-blue), var(--accent-cyan)); border:none; border-radius:4px; color:#fff; font-family:'Barlow',sans-serif; font-weight:700; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:opacity 0.2s; }
-  .btn-primary:hover { opacity:0.85; }
-  .btn-cancel { padding:10px 24px; background:transparent; border:1px solid var(--border-bright); border-radius:4px; color:var(--text-secondary); font-family:'Barlow',sans-serif; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:1px; }
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(8,12,20,0.85); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--bg-panel); border:1px solid var(--border-bright); border-radius:8px; width:560px; max-height:80vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,0.6); }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .modal-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-primary); }
+  .modal-close { background:none; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer; padding:0 4px; }
+  .modal-close:hover { color:var(--text-primary); }
+  .modal-body { padding:20px; }
+  .form-row { margin-bottom:16px; }
+  .form-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-secondary); margin-bottom:6px; display:block; }
+  .form-select, .form-input { width:100%; background:var(--bg-deep); border:1px solid var(--border-bright); color:var(--text-primary); padding:8px 12px; border-radius:4px; font-family:'Barlow',sans-serif; font-size:13px; appearance:none; cursor:pointer; }
+  .form-select:focus, .form-input:focus { outline:none; border-color:var(--accent-blue); }
+  .route-preview { background:var(--bg-deep); border:1px solid var(--border); border-radius:4px; height:200px; margin-bottom:16px; position:relative; overflow:hidden; }
+  #modalMap { width:100%; height:100%; }
+  .route-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .compare-card { background:var(--bg-deep); border:1px solid var(--border); border-radius:4px; padding:10px; text-align:center; }
+  .compare-val { font-family:'Share Tech Mono',monospace; font-size:24px; font-weight:700; margin-bottom:2px; }
+  .compare-val.navpath { color:var(--green); }
+  .compare-val.manual { color:var(--red); }
+  .compare-label { font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+  .modal-footer { display:flex; gap:10px; padding:16px 20px; border-top:1px solid var(--border); justify-content:flex-end; }
+  .btn-primary { padding:10px 24px; background:linear-gradient(135deg, var(--accent-blue), var(--accent-cyan)); border:none; border-radius:4px; color:#fff; font-family:'Barlow',sans-serif; font-weight:700; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:opacity 0.2s; }
+  .btn-primary:hover { opacity:0.85; }
+  .btn-cancel { padding:10px 24px; background:transparent; border:1px solid var(--border-bright); border-radius:4px; color:var(--text-secondary); font-family:'Barlow',sans-serif; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:1px; }
 
-  /* LEAFLET OVERRIDE */
-  .leaflet-container { background:#0d1a26 !important; }
-  .leaflet-tile { filter:brightness(0.6) saturate(0.5) hue-rotate(180deg); }
-  .leaflet-popup-content-wrapper { background:var(--bg-panel) !important; color:var(--text-primary) !important; border:1px solid var(--border-bright) !important; border-radius:8px !important; font-family:'Barlow',sans-serif !important; }
-  .leaflet-popup-tip { background:var(--bg-panel) !important; }
+  /* LEAFLET OVERRIDE */
+  .leaflet-container { background:#0d1a26 !important; }
+  .leaflet-tile { filter:brightness(0.6) saturate(0.5) hue-rotate(180deg); }
+  .leaflet-popup-content-wrapper { background:var(--bg-panel) !important; color:var(--text-primary) !important; border:1px solid var(--border-bright) !important; border-radius:8px !important; font-family:'Barlow',sans-serif !important; }
+  .leaflet-popup-tip { background:var(--bg-panel) !important; }
 
-  /* CONNECTION STATUS */
-  .conn-badge { font-size:10px; padding:2px 8px; border-radius:3px; font-family:'Share Tech Mono',monospace; }
-  .conn-badge.live { color:var(--green); background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); }
-  .conn-badge.lost { color:var(--red); background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); animation:pulse 1s infinite; }
+  /* CONNECTION STATUS */
+  .conn-badge { font-size:10px; padding:2px 8px; border-radius:3px; font-family:'Share Tech Mono',monospace; }
+  .conn-badge.live { color:var(--green); background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); }
+  .conn-badge.lost { color:var(--red); background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); animation:pulse 1s infinite; }
 
-  /* UPS TIMER */
-  .ups-timer { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--orange); animation:pulse 1s infinite; }
+  /* UPS TIMER */
+  .ups-timer { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--orange); animation:pulse 1s infinite; }
 
-  /* SECTION DIVIDER */
-  .section-divider { height:1px; background:linear-gradient(90deg, var(--accent-blue), transparent); margin:0 14px; opacity:0.3; }
+  /* SECTION DIVIDER */
+  .section-divider { height:1px; background:linear-gradient(90deg, var(--accent-blue), transparent); margin:0 14px; opacity:0.3; }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">
-    <div class="logo-mark">N</div>
-    <div>
-      <div class="logo-text">NAVPATH</div>
-      <div class="logo-sub">Dispatch Control</div>
-    </div>
-  </div>
-  <div class="topbar-center">
-    <button class="tab-btn active" onclick="switchPage('dispatch', this)">⬡ Dispatch</button>
-    <button class="tab-btn" onclick="switchPage('analytics', this)">▲ Analytics</button>
-    <button class="tab-btn" onclick="switchPage('fleet', this)">◈ Fleet</button>
-    <button class="tab-btn" onclick="switchPage('health', this)">◉ System</button>
-  </div>
-  <div class="topbar-right">
-    <span id="connBadge" class="conn-badge lost">CONNECTING</span>
-    <div class="sys-status">
-      <div class="sys-dot"><div class="dot green" id="serverDot"></div>Server</div>
-      <div class="sys-dot"><div class="dot green"></div><span id="moduleStatus">4/4 Modules</span></div>
-      <div class="sys-dot"><div class="dot yellow"></div>GPS</div>
-    </div>
-    <div class="time-display" id="clock">--:--:--</div>
-  </div>
+  <div class="logo">
+    <div class="logo-mark">N</div>
+    <div>
+      <div class="logo-text">NAVPATH</div>
+      <div class="logo-sub">Dispatch Control</div>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <button class="tab-btn active" onclick="switchPage('dispatch', this)">⬡ Dispatch</button>
+    <button class="tab-btn" onclick="switchPage('analytics', this)">▲ Analytics</button>
+    <button class="tab-btn" onclick="switchPage('fleet', this)">◈ Fleet</button>
+    <button class="tab-btn" onclick="switchPage('health', this)">◉ System</button>
+  </div>
+  <div class="topbar-right">
+    <span id="connBadge" class="conn-badge lost">CONNECTING</span>
+    <div class="sys-status">
+      <div class="sys-dot"><div class="dot green" id="serverDot"></div>Server</div>
+      <div class="sys-dot"><div class="dot green"></div><span id="moduleStatus">4/4 Modules</span></div>
+      <div class="sys-dot"><div class="dot yellow"></div>GPS</div>
+    </div>
+    <div class="time-display" id="clock">--:--:--</div>
+  </div>
 </div>
 
-<!-- ALERT BANNERS -->
 <div class="alert-area" id="alertArea"></div>
 
-<!-- SAVINGS BAR — [INTEGRATION] populated from /api/stats + WebSocket analytics -->
 <div class="savings-bar">
-  <div class="savings-item">
-    <div>
-      <div class="savings-num" id="timeSaved">--:--</div>
-      <div class="savings-label">Minutes saved today</div>
-    </div>
-  </div>
-  <div class="savings-item">
-    <div>
-      <div class="savings-num" id="tripsHandled">0</div>
-      <div class="savings-label">Emergencies handled</div>
-    </div>
-  </div>
-  <div class="savings-item">
-    <div>
-      <div class="savings-num" id="intCleared">0</div>
-      <div class="savings-label">Intersections cleared</div>
-    </div>
-  </div>
-  <div class="savings-item">
-    <div>
-      <div class="savings-num" id="totalOverrides">0</div>
-      <div class="savings-label">Total overrides</div>
-    </div>
-  </div>
-  <div class="savings-item" style="margin-left:auto; border-left:1px solid var(--border); padding-left:20px;">
-    <div>
-      <div style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px;">NavPath vs Manual</div>
-      <div style="font-family:'Share Tech Mono',monospace; font-size:15px; color:var(--accent-cyan);">2.67 min <span style="color:var(--text-secondary)">vs</span> <span style="color:var(--red)">5.41 min</span> per trip</div>
-    </div>
-  </div>
+  <div class="savings-item">
+    <div>
+      <div class="savings-num" id="tripsHandled">0</div>
+      <div class="savings-label">Emergencies handled</div>
+    </div>
+  </div>
+  <div class="savings-item">
+    <div>
+      <div class="savings-num" id="intCleared">0</div>
+      <div class="savings-label">Intersections cleared</div>
+    </div>
+  </div>
+  <div class="savings-item">
+    <div>
+      <div class="savings-num" id="totalOverrides">0</div>
+      <div class="savings-label">Total overrides</div>
+    </div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- DISPATCH PAGE                              -->
-<!-- ═══════════════════════════════════════════ -->
 <div class="page active" id="page-dispatch">
-  <!-- LEFT: Active Ambulances -->
-  <div class="left-panel">
-    <div class="panel-section">
-      <div class="panel-header" onclick="toggleSection('ambSection')">
-        <!-- [INTEGRATION] count-badge updated by renderAmbulances() -->
-        <div class="panel-title">Active Ambulances <span class="count-badge red" id="ambCountBadge">0</span></div>
-        <span style="color:var(--text-secondary); font-size:12px;">▾</span>
-      </div>
-      <!-- [INTEGRATION] populated by renderAmbulances() via WebSocket analytics -->
-      <div class="panel-content" id="ambSection">
-        <div class="empty-state">Waiting for GPS signal...</div>
-      </div>
-    </div>
-  </div>
+    <div class="left-panel">
+    <div class="panel-section">
+      <div class="panel-header" onclick="toggleSection('ambSection')">
+                <div class="panel-title">Active Ambulances <span class="count-badge red" id="ambCountBadge">0</span></div>
+        <span style="color:var(--text-secondary); font-size:12px;">▾</span>
+      </div>
+            <div class="panel-content" id="ambSection">
+        <div class="empty-state">Waiting for GPS signal...</div>
+      </div>
+    </div>
+  </div>
 
-  <!-- CENTER: Map + Log -->
-  <div class="map-and-log">
-    <div class="map-container" style="flex:1; position:relative;">
-      <div id="map"></div>
-      <!-- Override popup — [INTEGRATION] shown when WebSocket reports OVERRIDE state -->
-      <div class="map-popup-info" id="intPopup" style="display:none;">
-        <div class="map-popup-title" id="popupTitle">◉ Override Active</div>
-        <div class="popup-compare">
-          <div><div class="popup-val bad">47s</div><div class="popup-item-label">Without NavPath</div></div>
-          <div class="popup-arrow">→</div>
-          <div><div class="popup-val good">0s</div><div class="popup-item-label">With NavPath</div></div>
-        </div>
-        <div id="popupDetail" style="margin-top:8px; font-size:10px; color:var(--text-secondary);"></div>
-      </div>
-      <!-- Map controls -->
-      <div style="position:absolute; top:12px; right:12px; z-index:500; display:flex; flex-direction:column; gap:6px;">
-        <button onclick="map.setZoom(map.getZoom()+1)" style="width:30px;height:30px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:16px;">+</button>
-        <button onclick="map.setZoom(map.getZoom()-1)" style="width:30px;height:30px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:16px;">−</button>
-      </div>
-    </div>
+    <div class="map-and-log">
+    <div class="map-container" style="flex:1; position:relative;">
+      <div id="map"></div>
+            <div class="map-popup-info" id="intPopup" style="display:none;">
+        <div class="map-popup-title" id="popupTitle">◉ Override Active</div>
+        <div id="popupDetail" style="margin-top:8px; font-size:10px; color:var(--text-secondary);"></div>
+      </div>
+            <div style="position:absolute; top:12px; right:12px; z-index:500; display:flex; flex-direction:column; gap:6px;">
+        <button onclick="map.setZoom(map.getZoom()+1)" style="width:30px;height:30px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:16px;">+</button>
+        <button onclick="map.setZoom(map.getZoom()-1)" style="width:30px;height:30px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:16px;">−</button>
+      </div>
+    </div>
 
-    <!-- EVENT LOG — [INTEGRATION] fed by WebSocket 'event' messages -->
-    <div class="log-panel">
-      <div class="log-filters">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin-right:4px;">Event Log</span>
-        <button class="log-filter-btn active" onclick="filterLog(this,'all')">All</button>
-        <button class="log-filter-btn" onclick="filterLog(this,'OVERRIDE')">Overrides</button>
-        <button class="log-filter-btn" onclick="filterLog(this,'RESUME')">Resumes</button>
-        <button class="log-filter-btn" onclick="filterLog(this,'CONNECT')">Connects</button>
-        <button class="csv-btn" onclick="downloadCSV()">⬇ CSV</button>
-      </div>
-      <div class="event-log" id="eventLog"></div>
-    </div>
-  </div>
+        <div class="log-panel">
+      <div class="log-filters">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);margin-right:4px;">Event Log</span>
+        <button class="log-filter-btn active" onclick="filterLog(this,'all')">All</button>
+        <button class="log-filter-btn" onclick="filterLog(this,'OVERRIDE')">Overrides</button>
+        <button class="log-filter-btn" onclick="filterLog(this,'RESUME')">Resumes</button>
+        <button class="log-filter-btn" onclick="filterLog(this,'CONNECT')">Connects</button>
+        <button class="csv-btn" onclick="downloadCSV()">⬇ CSV</button>
+      </div>
+      <div class="event-log" id="eventLog"></div>
+    </div>
+  </div>
 
-  <!-- RIGHT: Intersection Status — [INTEGRATION] populated by buildIntersectionUI() + updateIntersections() -->
-  <div class="right-panel">
-    <div class="panel-header">
-      <div class="panel-title">Intersection Status <span class="count-badge" id="intCountBadge">0</span></div>
-    </div>
-    <div class="right-scroll" id="intersectionList"></div>
-  </div>
+    <div class="right-panel">
+    <div class="panel-header">
+      <div class="panel-title">Intersection Status <span class="count-badge" id="intCountBadge">0</span></div>
+    </div>
+    <div class="right-scroll" id="intersectionList"></div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- ANALYTICS PAGE — [INTEGRATION] /api/stats  -->
-<!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-analytics">
-  <div style="flex:1; overflow:auto; padding:20px;">
-    <div class="page-title" style="padding:0 0 16px;">Analytics</div>
-    <div class="analytics-grid">
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-trips">--</div>
-        <div class="stat-card-label">Emergencies Today</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-overrides">--</div>
-        <div class="stat-card-label">Total Overrides</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-resumes">--</div>
-        <div class="stat-card-label">Total Resumes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-cleared">--</div>
-        <div class="stat-card-label">Intersections Cleared</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-saved" style="color:var(--green)">--</div>
-        <div class="stat-card-label">Total Time Saved</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-uptime">--</div>
-        <div class="stat-card-label">Server Uptime (s)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-ambulances" style="color:var(--accent-cyan)">--</div>
-        <div class="stat-card-label">Active Ambulances</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-val" id="an-hardware">1/4</div>
-        <div class="stat-card-label">Hardware Modules</div>
-      </div>
-      <div class="stat-card full">
-        <div class="stat-card-label" style="margin-bottom:6px;">Active Intersections</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--text-primary)" id="an-int-list">INT-1 · INT-2 · INT-3 · INT-4</div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;" id="an-hardware-detail">INT-1 — Chitkara University Gate (Hardware ESP32)</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 4px 20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
-        <div class="chart-title">Response Time — Last 30 Days (est.)</div>
-        <canvas id="responseChart"></canvas>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
-        <div class="chart-title">Emergency Volume by Hour</div>
-        <canvas id="volumeChart"></canvas>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
-        <div class="chart-title">Priority Breakdown</div>
-        <canvas id="priorityChart"></canvas>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
-        <div class="chart-title">Intersection Override Frequency</div>
-        <canvas id="heatmapChart"></canvas>
-      </div>
-    </div>
-  </div>
+  <div style="flex:1; overflow:auto; padding:20px;">
+    <div class="page-title" style="padding:0 0 16px;">Analytics</div>
+    <div class="analytics-grid">
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-trips">--</div>
+        <div class="stat-card-label">Emergencies Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-overrides">--</div>
+        <div class="stat-card-label">Total Overrides</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-resumes">--</div>
+        <div class="stat-card-label">Total Resumes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-cleared">--</div>
+        <div class="stat-card-label">Intersections Cleared</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-uptime">--</div>
+        <div class="stat-card-label">Server Uptime (s)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-ambulances" style="color:var(--accent-cyan)">--</div>
+        <div class="stat-card-label">Active Ambulances</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-val" id="an-hardware">1/4</div>
+        <div class="stat-card-label">Hardware Modules</div>
+      </div>
+      <div class="stat-card full">
+        <div class="stat-card-label" style="margin-bottom:6px;">Active Intersections</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--text-primary)" id="an-int-list">INT-1 · INT-2 · INT-3 · INT-4</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;" id="an-hardware-detail">INT-1 — Chitkara University Gate (Hardware ESP32)</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 4px 20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
+        <div class="chart-title">Response Time — Last 30 Days (est.)</div>
+        <canvas id="responseChart"></canvas>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
+        <div class="chart-title">Emergency Volume by Hour</div>
+        <canvas id="volumeChart"></canvas>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
+        <div class="chart-title">Priority Breakdown</div>
+        <canvas id="priorityChart"></canvas>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:16px;">
+        <div class="chart-title">Intersection Override Frequency</div>
+        <canvas id="heatmapChart"></canvas>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- FLEET PAGE — [INTEGRATION] /api/fleet      -->
-<!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-fleet">
-  <div style="flex:1; overflow:auto; padding:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div class="page-title" style="padding:0;">Fleet Management</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-primary" style="font-size:11px;padding:8px 16px;" onclick="alert('Add ambulance: configure via server FLEET array')">+ Add Ambulance</button>
-        <button class="btn-cancel" style="font-size:11px;padding:8px 16px;" onclick="loadFleet()">↻ Refresh Fleet</button>
-      </div>
-    </div>
-    <!-- [INTEGRATION] tbody populated by loadFleet() calling /api/fleet -->
-    <table class="fleet-table">
-      <thead>
-        <tr><th>Vehicle</th><th>Driver</th><th>Status</th><th>Last Location</th><th>Trips / Month</th><th>Avg Speed</th><th>Service Status</th></tr>
-      </thead>
-      <tbody id="fleetTableBody">
-        <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading fleet data...</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div style="flex:1; overflow:auto; padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="page-title" style="padding:0;">Fleet Management</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" style="font-size:11px;padding:8px 16px;" onclick="alert('Add ambulance: configure via server FLEET array')">+ Add Ambulance</button>
+        <button class="btn-cancel" style="font-size:11px;padding:8px 16px;" onclick="loadFleet()">↻ Refresh Fleet</button>
+      </div>
+    </div>
+        <table class="fleet-table">
+      <thead>
+        <tr><th>Vehicle</th><th>Driver</th><th>Status</th><th>Last Location</th><th>Trips / Month</th><th>Avg Speed</th><th>Service Status</th></tr>
+      </thead>
+      <tbody id="fleetTableBody">
+        <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading fleet data...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- SYSTEM PAGE — [INTEGRATION] /api/system_health -->
-<!-- ═══════════════════════════════════════════════ -->
 <div class="page" id="page-health">
-  <div style="flex:1; overflow:auto; padding:20px;">
-    <div class="page-title" style="padding:0 0 16px;">System Health</div>
-    <!-- [INTEGRATION] populated by loadSystemHealth() calling /api/system_health -->
-    <div class="health-grid" id="healthGrid">
-      <div class="health-card"><div class="health-val">Loading...</div><div class="health-label">Server Uptime</div></div>
-    </div>
-    <div style="padding:16px 0;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);">Module Status</div>
-    <table class="fleet-table">
-      <thead><tr><th>Module</th><th>Location</th><th>Status</th><th>Last Heartbeat</th><th>Firmware</th><th>Tamper</th></tr></thead>
-      <tbody id="moduleTableBody">
-        <tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading module data...</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div style="flex:1; overflow:auto; padding:20px;">
+    <div class="page-title" style="padding:0 0 16px;">System Health</div>
+        <div class="health-grid" id="healthGrid">
+      <div class="health-card"><div class="health-val">Loading...</div><div class="health-label">Server Uptime</div></div>
+    </div>
+    <div style="padding:16px 0;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);">Module Status</div>
+    <table class="fleet-table">
+      <thead><tr><th>Module</th><th>Location</th><th>Status</th><th>Last Heartbeat</th><th>Firmware</th><th>Tamper</th></tr></thead>
+      <tbody id="moduleTableBody">
+        <tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading module data...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- ROUTE ASSIGN MODAL — [INTEGRATION] submits to /api/assign_route -->
 <div class="modal-overlay" id="routeModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">⇒ Assign Route</div>
-      <button class="modal-close" onclick="closeRouteModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <label class="form-label">Ambulance</label>
-        <!-- [INTEGRATION] populated by populateModalSelects() from live ambulance data -->
-        <select class="form-select" id="modalAmbSelect"></select>
-      </div>
-      <div class="form-row">
-        <label class="form-label">Route</label>
-        <!-- [INTEGRATION] populated from /api/routes -->
-        <select class="form-select" id="modalRouteSelect" onchange="onRouteSelectChange()"></select>
-      </div>
-      <div class="form-row">
-        <label class="form-label">Route Preview</label>
-        <div class="route-preview"><div id="modalMap"></div></div>
-      </div>
-      <div class="route-compare">
-        <div class="compare-card">
-          <div class="compare-val navpath" id="modalNavpathEta">--:--</div>
-          <div class="compare-label">With NavPath</div>
-        </div>
-        <div class="compare-card">
-          <div class="compare-val manual" id="modalManualEta">--:--</div>
-          <div class="compare-label">Without NavPath (est.)</div>
-        </div>
-      </div>
-      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:4px;padding:10px 14px;font-size:12px;color:#4ade80;" id="modalSavingNote">
-        ✓ Select a route to see estimated time savings.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeRouteModal()">Cancel</button>
-      <button class="btn-primary" onclick="confirmRoute()">Confirm & Send to Driver →</button>
-    </div>
-  </div>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⇒ Assign Route</div>
+      <button class="modal-close" onclick="closeRouteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="form-label">Ambulance</label>
+                <select class="form-select" id="modalAmbSelect"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Route</label>
+                <select class="form-select" id="modalRouteSelect" onchange="onRouteSelectChange()"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Route Preview</label>
+        <div class="route-preview"><div id="modalMap"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeRouteModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmRoute()">Confirm & Send to Driver →</button>
+    </div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!--  JAVASCRIPT — All API + WebSocket integration below   -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <script>
 // ══════════════════════════════════════════════
-//  STATE
+//  STATE
 // ══════════════════════════════════════════════
-let ambData       = {};   // amb_id → latest analytics payload
-let intMarkers    = {};   // int_id → Leaflet marker
-let ambMarkers    = {};   // amb_id → Leaflet marker
-let routesData    = {};   // route_id → route object
+let ambData       = {};   // amb_id → latest analytics payload
+let intMarkers    = {};   // int_id → Leaflet marker
+let ambMarkers    = {};   // amb_id → Leaflet marker
+let routesData    = {};   // route_id → route object
 let selectedAmbId = null; // currently selected ambulance
-let logFilter     = 'all';
-let allLogEntries = [];   // raw event objects for client-side filtering
+let logFilter     = 'all';
+let allLogEntries = [];   // raw event objects for client-side filtering
 let chartsRendered = false;
 let modalMapInited = false;
-let modalMapObj    = null;
+let modalMapObj    = null;
 
 // ══════════════════════════════════════════════
-//  CLOCK
+//  CLOCK
 // ══════════════════════════════════════════════
 setInterval(() => {
-  const n = new Date();
-  document.getElementById('clock').textContent =
-    String(n.getHours()).padStart(2,'0') + ':' +
-    String(n.getMinutes()).padStart(2,'0') + ':' +
-    String(n.getSeconds()).padStart(2,'0');
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' +
+    String(n.getMinutes()).padStart(2,'0') + ':' +
+    String(n.getSeconds()).padStart(2,'0');
 }, 1000);
 
 // ══════════════════════════════════════════════
-//  PAGE SWITCHING
+//  PAGE SWITCHING
 // ══════════════════════════════════════════════
 function switchPage(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).style.display = 'flex';
-  if (btn) btn.classList.add('active');
-  if (name === 'analytics') { renderCharts(); loadAnalyticsStats(); }
-  if (name === 'fleet')     loadFleet();
-  if (name === 'health')    loadSystemHealth();
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).style.display = 'flex';
+  if (btn) btn.classList.add('active');
+  if (name === 'analytics') { renderCharts(); loadAnalyticsStats(); }
+  if (name === 'fleet')     loadFleet();
+  if (name === 'health')    loadSystemHealth();
 }
 
 function toggleSection(id) {
-  const el = document.getElementById(id);
-  el.style.display = el.style.display === 'none' ? '' : 'none';
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? '' : 'none';
 }
 
 // ══════════════════════════════════════════════
-//  MAP INIT — Chitkara University Gate area
+//  MAP INIT — Chitkara University Gate area
 // ══════════════════════════════════════════════
 const MAP_CENTER = [30.5161, 76.6598];
 const map = L.map('map', { zoomControl: false }).setView(MAP_CENTER, 13);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
 }).addTo(map);
 
 // Leaflet icon factories
 function makeAmbIcon(priority) {
-  const colors = { RED:'#ef4444', YELLOW:'#eab308', GREEN:'#22c55e', NONE:'#6b8aaa' };
-  const c = colors[priority] || '#6b8aaa';
-  return L.divIcon({
-    className: '',
-    html: `<div style="background:${c};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px ${c}"></div>`,
-    iconSize: [14,14], iconAnchor: [7,7]
-  });
+  const colors = { RED:'#ef4444', YELLOW:'#eab308', GREEN:'#22c55e', NONE:'#6b8aaa' };
+  const c = colors[priority] || '#6b8aaa';
+  return L.divIcon({
+    className: '',
+    html: `<div style="background:${c};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px ${c}"></div>`,
+    iconSize: [14,14], iconAnchor: [7,7]
+  });
 }
 
 function makeIntIcon(state, power) {
-  const color = state === 'OVERRIDE' ? '#ef4444' : (power === 'ups' ? '#f97316' : '#22c55e');
-  const glow  = state === 'OVERRIDE' ? 'rgba(255,59,92,.6)' : 'rgba(34,197,94,.3)';
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 8px ${glow}"></div>`,
-    iconSize: [14,14], iconAnchor: [7,7]
-  });
+  const color = state === 'OVERRIDE' ? '#ef4444' : (power === 'ups' ? '#f97316' : '#22c55e');
+  const glow  = state === 'OVERRIDE' ? 'rgba(255,59,92,.6)' : 'rgba(34,197,94,.3)';
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 0 8px ${glow}"></div>`,
+    iconSize: [14,14], iconAnchor: [7,7]
+  });
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] Socket.IO — connects to server.py
+//  [INTEGRATION] Socket.IO — connects to server.py
 // ══════════════════════════════════════════════
 const socket = io({ transports: ['websocket', 'polling'] });
 
 socket.on('connect', () => {
-  document.getElementById('connBadge').textContent = 'LIVE';
-  document.getElementById('connBadge').className = 'conn-badge live';
-  addEventEntry({ type:'info', message:'WebSocket connection established.', timestamp: nowStr() });
+  document.getElementById('connBadge').textContent = 'LIVE';
+  document.getElementById('connBadge').className = 'conn-badge live';
+  addEventEntry({ type:'info', message:'WebSocket connection established.', timestamp: nowStr() });
 });
 
 socket.on('disconnect', () => {
-  document.getElementById('connBadge').textContent = 'DISCONNECTED';
-  document.getElementById('connBadge').className = 'conn-badge lost';
-  addEventEntry({ type:'alert', message:'WebSocket disconnected — reconnecting...', timestamp: nowStr() });
+  document.getElementById('connBadge').textContent = 'DISCONNECTED';
+  document.getElementById('connBadge').className = 'conn-badge lost';
+  addEventEntry({ type:'alert', message:'WebSocket disconnected — reconnecting...', timestamp: nowStr() });
 });
 
 // [INTEGRATION] 'init' — server sends full state on first connect
 socket.on('init', (data) => {
-  addEventEntry({ type:'info', message:'Grid configuration loaded from server.', timestamp: nowStr() });
+  addEventEntry({ type:'info', message:'Grid configuration loaded from server.', timestamp: nowStr() });
 
-  // Cache routes
-  if (data.routes) data.routes.forEach(r => routesData[r.id] = r);
+  // Cache routes
+  if (data.routes) data.routes.forEach(r => routesData[r.id] = r);
 
-  // Draw intersections on map + right panel
-  if (data.intersections) buildIntersectionUI(data.intersections);
+  // Draw intersections on map + right panel
+  if (data.intersections) buildIntersectionUI(data.intersections);
 
-  // Update savings bar stats
-  if (data.stats) updateSavingsBar(data.stats);
+  // Update savings bar stats
+  if (data.stats) updateSavingsBar(data.stats);
 
-  // Restore any active ambulances
-  if (data.ambulances && data.ambulances.length) {
-    data.ambulances.forEach(a => {
-      if (a.lat && a.lon) {
-        ambData[a.id] = a;
-        placeAmbulanceMarker(a.id, a.lat, a.lon, a.priority || 'NONE');
-      }
-    });
-    renderAmbulances();
-  }
+  // Restore any active ambulances
+  if (data.ambulances && data.ambulances.length) {
+    data.ambulances.forEach(a => {
+      if (a.lat && a.lon) {
+        ambData[a.id] = a;
+        placeAmbulanceMarker(a.id, a.lat, a.lon, a.priority || 'NONE');
+      }
+    });
+    renderAmbulances();
+  }
 
-  // Restore event log from server history
-  if (data.events) {
-    [...data.events].reverse().forEach(ev => addEventEntry(ev, true));
-  }
+  // Restore event log from server history
+  if (data.events) {
+    [...data.events].reverse().forEach(ev => addEventEntry(ev, true));
+  }
 
-  // Set map center if server provides it
-  if (data.map_center) map.setView([data.map_center.lat, data.map_center.lon], data.map_center.zoom || 13);
+  // Set map center if server provides it
+  if (data.map_center) map.setView([data.map_center.lat, data.map_center.lon], data.map_center.zoom || 13);
 });
 
 // [INTEGRATION] 'analytics' — live GPS + intersection update (1/sec per ambulance)
 socket.on('analytics', (data) => {
-  if (!data.lat || !data.lon) return;
+  if (!data.lat || !data.lon) return;
 
-  // Update in-memory state
-  ambData[data.amb_id] = data;
+  // Update in-memory state
+  ambData[data.amb_id] = data;
 
-  // Move / create ambulance marker
-  placeAmbulanceMarker(data.amb_id, data.lat, data.lon, data.priority || 'NONE');
+  // Move / create ambulance marker
+  placeAmbulanceMarker(data.amb_id, data.lat, data.lon, data.priority || 'NONE');
 
-  // Update left panel ambulance cards
-  renderAmbulances();
+  // Update left panel ambulance cards
+  renderAmbulances();
 
-  // Update right panel intersection badges + map markers
-  if (data.intersections && data.intersections.length) {
-    updateIntersections(data.intersections);
-    checkOverridePopup(data.intersections, data.amb_id);
-  }
+  // Update right panel intersection badges + map markers
+  if (data.intersections && data.intersections.length) {
+    updateIntersections(data.intersections);
+    checkOverridePopup(data.intersections, data.amb_id);
+  }
 
-  // Update savings bar
-  if (data.stats) updateSavingsBar(data.stats);
+  // Update savings bar
+  if (data.stats) updateSavingsBar(data.stats);
 });
 
 // [INTEGRATION] 'event' — system log entries pushed from server
 socket.on('event', (evt) => {
-  addEventEntry(evt);
+  addEventEntry(evt);
 });
 
 // [INTEGRATION] 'trip_ended' — remove ambulance from UI
 socket.on('trip_ended', (d) => {
-  delete ambData[d.amb_id];
-  if (ambMarkers[d.amb_id]) {
-    map.removeLayer(ambMarkers[d.amb_id]);
-    delete ambMarkers[d.amb_id];
-  }
-  renderAmbulances();
+  delete ambData[d.amb_id];
+  if (ambMarkers[d.amb_id]) {
+    map.removeLayer(ambMarkers[d.amb_id]);
+    delete ambMarkers[d.amb_id];
+  }
+  renderAmbulances();
 });
 
 socket.on('route_assigned', (d) => {
-  addEventEntry({ type:'success', message:`Route ${d.route.name} assigned to ${d.amb_id}`, timestamp: nowStr() });
+  addEventEntry({ type:'success', message:`Route ${d.route.name} assigned to ${d.amb_id}`, timestamp: nowStr() });
 });
 
 socket.on('priority_change', (d) => {
-  if (ambData[d.amb_id]) ambData[d.amb_id].priority = d.priority;
-  renderAmbulances();
+  if (ambData[d.amb_id]) ambData[d.amb_id].priority = d.priority;
+  renderAmbulances();
 });
 
 // ══════════════════════════════════════════════
-//  MAP HELPERS
+//  MAP HELPERS
 // ══════════════════════════════════════════════
 function placeAmbulanceMarker(ambId, lat, lon, priority) {
-  if (!ambMarkers[ambId]) {
-    ambMarkers[ambId] = L.marker([lat, lon], {
-      icon: makeAmbIcon(priority), zIndexOffset: 1000
-    }).addTo(map).bindPopup(`<b>🚑 ${ambId}</b><br>Priority: ${priority}`);
-  } else {
-    ambMarkers[ambId].setLatLng([lat, lon]);
-    ambMarkers[ambId].setIcon(makeAmbIcon(priority));
-  }
-  // Pan map if this is the selected ambulance
-  if (ambId === selectedAmbId) {
-    map.panTo([lat, lon], { animate: true, duration: 0.5 });
-  }
+  if (!ambMarkers[ambId]) {
+    ambMarkers[ambId] = L.marker([lat, lon], {
+      icon: makeAmbIcon(priority), zIndexOffset: 1000
+    }).addTo(map).bindPopup(`<b>🚑 ${ambId}</b><br>Priority: ${priority}`);
+  } else {
+    ambMarkers[ambId].setLatLng([lat, lon]);
+    ambMarkers[ambId].setIcon(makeAmbIcon(priority));
+  }
+  // Pan map if this is the selected ambulance
+  if (ambId === selectedAmbId) {
+    map.panTo([lat, lon], { animate: true, duration: 0.5 });
+  }
 }
 
 // [INTEGRATION] Called once on 'init' — draws all 4 intersections
 function buildIntersectionUI(intersections) {
-  const list = document.getElementById('intersectionList');
-  list.innerHTML = '';
-  document.getElementById('intCountBadge').textContent = intersections.length;
+  const list = document.getElementById('intersectionList');
+  list.innerHTML = '';
+  document.getElementById('intCountBadge').textContent = intersections.length;
 
-  intersections.forEach(tl => {
-    // Map dot
-    if (intMarkers[tl.id]) map.removeLayer(intMarkers[tl.id]);
-    intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
-      icon: makeIntIcon(tl.state, tl.power), zIndexOffset: 500
-    }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}`);
+  intersections.forEach(tl => {
+    // Map dot
+    if (intMarkers[tl.id]) map.removeLayer(intMarkers[tl.id]);
+    intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
+      icon: makeIntIcon(tl.state, tl.power), zIndexOffset: 500
+    }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}`);
 
-    // Sidebar row
-    list.appendChild(buildIntRow(tl));
-  });
+    // Sidebar row
+    list.appendChild(buildIntRow(tl));
+  });
 }
 
 function buildIntRow(tl) {
-  const div = document.createElement('div');
-  div.className = 'int-card' + (tl.state === 'OVERRIDE' ? ' override-active' : '');
-  div.id = `intcard-${tl.id}`;
+  const div = document.createElement('div');
+  div.className = 'int-card' + (tl.state === 'OVERRIDE' ? ' override-active' : '');
+  div.id = `intcard-${tl.id}`;
 
-  const hwBadge = tl.hardware ? `<span style="font-family:'Share Tech Mono';font-size:9px;background:rgba(14,165,233,0.12);color:var(--accent-blue);border:1px solid rgba(14,165,233,0.3);padding:1px 5px;border-radius:3px;margin-left:4px;">ESP32</span>` : '';
+  const hwBadge = tl.hardware ? `<span style="font-family:'Share Tech Mono';font-size:9px;background:rgba(14,165,233,0.12);color:var(--accent-blue);border:1px solid rgba(14,165,233,0.3);padding:1px 5px;border-radius:3px;margin-left:4px;">ESP32</span>` : '';
 
-  const powerHtml = tl.power === 'ups'
-    ? `<div class="power-icon ups">🔋 UPS</div>`
-    : `<div class="power-icon main">⚡ Main</div>`;
+  const powerHtml = tl.power === 'ups'
+    ? `<div class="power-icon ups">🔋 UPS</div>`
+    : `<div class="power-icon main">⚡ Main</div>`;
 
-  const overrideDurHtml = tl.state === 'OVERRIDE' && tl.override_duration
-    ? `<div style="font-size:10px;color:#f87171;margin-top:4px;">Override active: ${tl.override_duration}s</div>`
-    : `<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">Overrides today: ${tl.overrides_today || 0} · Avg ${tl.avg_duration || 0}s</div>`;
+  const overrideDurHtml = tl.state === 'OVERRIDE' && tl.override_duration
+    ? `<div style="font-size:10px;color:#f87171;margin-top:4px;">Override active: ${tl.override_duration}s</div>`
+    : `<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">Overrides today: ${tl.overrides_today || 0} · Avg ${tl.avg_duration || 0}s</div>`;
 
-  const lockedHtml = tl.locked_by
-    ? `<div class="int-override-badge active">🔴 OVERRIDE — ${tl.locked_by}</div>`
-    : `<div class="int-override-badge normal" id="badge-${tl.id}">Normal</div>`;
+  const lockedHtml = tl.locked_by
+    ? `<div class="int-override-badge active">🔴 OVERRIDE — ${tl.locked_by}</div>`
+    : `<div class="int-override-badge normal" id="badge-${tl.id}">Normal</div>`;
 
-  div.innerHTML = `
-    <div class="int-header">
-      <div class="int-id">${tl.id}${hwBadge}</div>
-      ${powerHtml}
-    </div>
-    <div class="int-name">${tl.name}</div>
-    <div class="int-status-row">
-      <div class="phase-indicator">
-        <div class="phase-dot r ${tl.state === 'OVERRIDE' ? 'active' : ''}"></div>
-        <div class="phase-dot y ${tl.state !== 'OVERRIDE' ? '' : ''}"></div>
-        <div class="phase-dot g ${tl.state === 'NORMAL' ? 'active' : ''}"></div>
-      </div>
-      <div id="badge-${tl.id}" class="int-override-badge ${tl.state === 'OVERRIDE' ? 'active' : 'normal'}">${tl.state === 'OVERRIDE' ? ('🔴 OVERRIDE' + (tl.locked_by ? ' — ' + tl.locked_by : '')) : 'Normal'}</div>
-    </div>
-    ${overrideDurHtml}
-  `;
-  return div;
+  div.innerHTML = `
+    <div class="int-header">
+      <div class="int-id">${tl.id}${hwBadge}</div>
+      ${powerHtml}
+    </div>
+    <div class="int-name">${tl.name}</div>
+    <div class="int-status-row">
+      <div class="phase-indicator">
+        <div class="phase-dot r ${tl.state === 'OVERRIDE' ? 'active' : ''}"></div>
+        <div class="phase-dot y ${tl.state !== 'OVERRIDE' ? '' : ''}"></div>
+        <div class="phase-dot g ${tl.state === 'NORMAL' ? 'active' : ''}"></div>
+      </div>
+      <div id="badge-${tl.id}" class="int-override-badge ${tl.state === 'OVERRIDE' ? 'active' : 'normal'}">${tl.state === 'OVERRIDE' ? ('🔴 OVERRIDE' + (tl.locked_by ? ' — ' + tl.locked_by : '')) : 'Normal'}</div>
+    </div>
+    ${overrideDurHtml}
+  `;
+  return div;
 }
 
 // [INTEGRATION] Called every analytics event to update badges + map dots
 function updateIntersections(intersections) {
-  intersections.forEach(tl => {
-    // Update badge text + class
-    const badge = document.getElementById(`badge-${tl.id}`);
-    if (badge) {
-      badge.className = `int-override-badge ${tl.state === 'OVERRIDE' ? 'active' : 'normal'}`;
-      badge.textContent = tl.state === 'OVERRIDE'
-        ? `🔴 OVERRIDE${tl.locked_by ? ' — ' + tl.locked_by : ''}`
-        : 'Normal';
-    }
+  intersections.forEach(tl => {
+    // Update badge text + class
+    const badge = document.getElementById(`badge-${tl.id}`);
+    if (badge) {
+      badge.className = `int-override-badge ${tl.state === 'OVERRIDE' ? 'active' : 'normal'}`;
+      badge.textContent = tl.state === 'OVERRIDE'
+        ? `🔴 OVERRIDE${tl.locked_by ? ' — ' + tl.locked_by : ''}`
+        : 'Normal';
+    }
 
-    // Update int-card background
-    const card = document.getElementById(`intcard-${tl.id}`);
-    if (card) {
-      card.className = 'int-card' + (tl.state === 'OVERRIDE' ? ' override-active' : '');
-    }
+    // Update int-card background
+    const card = document.getElementById(`intcard-${tl.id}`);
+    if (card) {
+      card.className = 'int-card' + (tl.state === 'OVERRIDE' ? ' override-active' : '');
+    }
 
-    // Update map marker icon
-    if (intMarkers[tl.id]) {
-      intMarkers[tl.id].setIcon(makeIntIcon(tl.state, tl.power));
-      intMarkers[tl.id].setPopupContent(
-        `<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}` +
-        (tl.locked_by ? `<br>Locked: ${tl.locked_by}` : '') +
-        (tl.distance   ? `<br>Distance: ${tl.distance}m` : '')
-      );
-    } else {
-      // Intersection appeared after init — add it
-      intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
-        icon: makeIntIcon(tl.state, tl.power), zIndexOffset: 500
-      }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}`);
+    // Update map marker icon
+    if (intMarkers[tl.id]) {
+      intMarkers[tl.id].setIcon(makeIntIcon(tl.state, tl.power));
+      intMarkers[tl.id].setPopupContent(
+        `<b>${tl.name}</b><br>ID: ${tl.id}<br>State: ${tl.state}` +
+        (tl.locked_by ? `<br>Locked: ${tl.locked_by}` : '') +
+        (tl.distance   ? `<br>Distance: ${tl.distance}m` : '')
+      );
+    } else {
+      // Intersection appeared after init — add it
+      intMarkers[tl.id] = L.marker([tl.lat, tl.lon], {
+        icon: makeIntIcon(tl.state, tl.power), zIndexOffset: 500
+      }).addTo(map).bindPopup(`<b>${tl.name}</b><br>ID: ${tl.id}`);
 
-      if (!document.getElementById(`intcard-${tl.id}`)) {
-        document.getElementById('intersectionList').appendChild(buildIntRow(tl));
-        document.getElementById('intCountBadge').textContent =
-          document.querySelectorAll('[id^="intcard-"]').length;
-      }
-    }
-  });
+      if (!document.getElementById(`intcard-${tl.id}`)) {
+        document.getElementById('intersectionList').appendChild(buildIntRow(tl));
+        document.getElementById('intCountBadge').textContent =
+          document.querySelectorAll('[id^="intcard-"]').length;
+      }
+    }
+  });
 }
 
 // Show/hide override popup when an intersection goes into override
 function checkOverridePopup(intersections, ambId) {
-  const overrideInt = intersections.find(i => i.state === 'OVERRIDE' && i.locked_by === ambId);
-  const popup = document.getElementById('intPopup');
-  if (overrideInt) {
-    document.getElementById('popupTitle').textContent = `◉ ${overrideInt.id} — Override Active`;
-    document.getElementById('popupDetail').textContent =
-      `${ambId} corridor locked. Distance: ${overrideInt.distance || '--'}m`;
-    popup.style.display = 'block';
-  } else {
-    popup.style.display = 'none';
-  }
+  const overrideInt = intersections.find(i => i.state === 'OVERRIDE' && i.locked_by === ambId);
+  const popup = document.getElementById('intPopup');
+  if (overrideInt) {
+    document.getElementById('popupTitle').textContent = `◉ ${overrideInt.id} — Override Active`;
+    document.getElementById('popupDetail').textContent =
+      `${ambId} corridor locked. Distance: ${overrideInt.distance || '--'}m`;
+    popup.style.display = 'block';
+  } else {
+    popup.style.display = 'none';
+  }
 }
 
 // ══════════════════════════════════════════════
-//  AMBULANCE CARDS (left panel)
+//  AMBULANCE CARDS (left panel)
 // ══════════════════════════════════════════════
 function renderAmbulances() {
-  const el  = document.getElementById('ambSection');
-  const ids = Object.keys(ambData);
-  document.getElementById('ambCountBadge').textContent = ids.length;
+  const el  = document.getElementById('ambSection');
+  const ids = Object.keys(ambData);
+  document.getElementById('ambCountBadge').textContent = ids.length;
 
-  if (!ids.length) {
-    el.innerHTML = '<div class="empty-state">Waiting for GPS signal...</div>';
-    return;
-  }
+  if (!ids.length) {
+    el.innerHTML = '<div class="empty-state">Waiting for GPS signal...</div>';
+    return;
+  }
 
-  el.innerHTML = ids.map(id => {
-    const d   = ambData[id];
-    const pri = (d.priority || 'NONE').toUpperCase();
-    const clr = { RED:'red', YELLOW:'yellow', GREEN:'green', NONE:'none' }[pri] || 'none';
-    const eta = d.eta_str || (d.eta_seconds ? formatEta(d.eta_seconds) : '--:--');
-    const spd = d.speed ? Math.round(d.speed) : 0;
-    const distToNext = d.intersections
-      ? (d.intersections.find(i => i.state === 'OVERRIDE') || d.intersections[d.active_int_idx] || {}).distance
-      : null;
-    const nextLabel = distToNext ? (distToNext >= 1000 ? (distToNext/1000).toFixed(1)+'km' : distToNext+'m') : '--';
+  el.innerHTML = ids.map(id => {
+    const d   = ambData[id];
+    const pri = (d.priority || 'NONE').toUpperCase();
+    const clr = { RED:'red', YELLOW:'yellow', GREEN:'green', NONE:'none' }[pri] || 'none';
+    const eta = d.eta_str || (d.eta_seconds ? formatEta(d.eta_seconds) : '--:--');
+    const spd = d.speed ? Math.round(d.speed) : 0;
+    const distToNext = d.intersections
+      ? (d.intersections.find(i => i.state === 'OVERRIDE') || d.intersections[d.active_int_idx] || {}).distance
+      : null;
+    const nextLabel = distToNext ? (distToNext >= 1000 ? (distToNext/1000).toFixed(1)+'km' : distToNext+'m') : '--';
 
-    return `
-    <div class="amb-card priority-${clr} ${id === selectedAmbId ? 'selected' : ''}" onclick="selectAmb('${id}')">
-      <div class="amb-header">
-        <div class="amb-id">${id}</div>
-        <div class="priority-badge ${clr}">● ${pri}</div>
-      </div>
-      <div class="amb-stats">
-        <div class="amb-stat">
-          <div class="amb-stat-val">${spd}</div>
-          <div class="amb-stat-label">km/h</div>
-        </div>
-        <div class="amb-stat">
-          <div class="amb-stat-val">${eta}</div>
-          <div class="amb-stat-label">ETA</div>
-        </div>
-        <div class="amb-stat">
-          <div class="amb-stat-val" style="color:var(--green)">${nextLabel}</div>
-          <div class="amb-stat-label">Next INT</div>
-        </div>
-      </div>
-      <div class="amb-info-row">Route: <span>${d.route_name || d.route_id || 'None'}</span></div>
-      <div class="amb-info-row">Dest: <span>${d.destination || '--'}</span></div>
-      <div class="amb-info-row">Dist: <span>${d.dest_dist_m ? (d.dest_dist_m/1000).toFixed(2)+'km' : '--'}</span></div>
-      <div class="amb-actions">
-        <button class="amb-btn assign" onclick="openRouteModal('${id}'); event.stopPropagation()">⇒ Assign Route</button>
-        <button class="amb-btn" onclick="changePriority('${id}'); event.stopPropagation()">⬡ Priority</button>
-        <button class="amb-btn abort" onclick="abortTrip('${id}'); event.stopPropagation()">✕ Abort</button>
-        <button class="amb-btn" onclick="alert('Contact driver: ${id}')">📞 Contact</button>
-      </div>
-    </div>`;
-  }).join('');
+    return `
+    <div class="amb-card priority-${clr} ${id === selectedAmbId ? 'selected' : ''}" onclick="selectAmb('${id}')">
+      <div class="amb-header">
+        <div class="amb-id">${id}</div>
+        <div class="priority-badge ${clr}">● ${pri}</div>
+      </div>
+      <div class="amb-stats">
+        <div class="amb-stat">
+          <div class="amb-stat-val">${spd}</div>
+          <div class="amb-stat-label">km/h</div>
+        </div>
+        <div class="amb-stat">
+          <div class="amb-stat-val">${eta}</div>
+          <div class="amb-stat-label">ETA</div>
+        </div>
+        <div class="amb-stat">
+          <div class="amb-stat-val" style="color:var(--green)">${nextLabel}</div>
+          <div class="amb-stat-label">Next INT</div>
+        </div>
+      </div>
+      <div class="amb-info-row">Route: <span>${d.route_name || d.route_id || 'None'}</span></div>
+      <div class="amb-info-row">Dest: <span>${d.destination || '--'}</span></div>
+      <div class="amb-info-row">Dist: <span>${d.dest_dist_m ? (d.dest_dist_m/1000).toFixed(2)+'km' : '--'}</span></div>
+      <div class="amb-actions">
+        <button class="amb-btn assign" onclick="openRouteModal('${id}'); event.stopPropagation()">⇒ Assign Route</button>
+        <button class="amb-btn" onclick="changePriority('${id}'); event.stopPropagation()">⬡ Priority</button>
+        <button class="amb-btn abort" onclick="abortTrip('${id}'); event.stopPropagation()">✕ Abort</button>
+        <button class="amb-btn" onclick="alert('Contact driver: ${id}')">📞 Contact</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function selectAmb(id) {
-  selectedAmbId = id;
-  renderAmbulances();
-  if (ambData[id] && ambMarkers[id]) {
-    map.panTo(ambMarkers[id].getLatLng());
-    ambMarkers[id].openPopup();
-  }
+  selectedAmbId = id;
+  renderAmbulances();
+  if (ambData[id] && ambMarkers[id]) {
+    map.panTo(ambMarkers[id].getLatLng());
+    ambMarkers[id].openPopup();
+  }
 }
 
 // ══════════════════════════════════════════════
-//  SAVINGS BAR (live stats)
+//  SAVINGS BAR (live stats)
 // ══════════════════════════════════════════════
 function updateSavingsBar(s) {
-  if (!s) return;
-  if (s.time_saved_str) document.getElementById('timeSaved').textContent   = s.time_saved_str;
-  if (s.total_trips     !== undefined) document.getElementById('tripsHandled').textContent  = s.total_trips;
-  if (s.intersections_cleared !== undefined) document.getElementById('intCleared').textContent   = s.intersections_cleared;
-  if (s.total_overrides !== undefined) document.getElementById('totalOverrides').textContent = s.total_overrides;
+  if (!s) return;
+  if (s.total_trips     !== undefined) document.getElementById('tripsHandled').textContent  = s.total_trips;
+  if (s.intersections_cleared !== undefined) document.getElementById('intCleared').textContent   = s.intersections_cleared;
+  if (s.total_overrides !== undefined) document.getElementById('totalOverrides').textContent = s.total_overrides;
 }
 
 // ══════════════════════════════════════════════
-//  EVENT LOG
+//  EVENT LOG
 // ══════════════════════════════════════════════
 function addEventEntry(evt, prepend = false) {
-  allLogEntries.push(evt);
-  if (allLogEntries.length > 500) allLogEntries.shift();
+  allLogEntries.push(evt);
+  if (allLogEntries.length > 500) allLogEntries.shift();
 
-  if (logFilter !== 'all' && evt.type !== logFilter) return;
+  if (logFilter !== 'all' && evt.type !== logFilter) return;
 
-  const typeClass = {
-    'OVERRIDE':        'alert',
-    'MANUAL_OVERRIDE': 'alert',
-    'RESUME':          'success',
-    'MANUAL_RESUME':   'success',
-    'TRIP_COMPLETE':   'success',
-    'CONNECT':         'info',
-    'DISCONNECT':      'info',
-    'ROUTE_ASSIGNED':  'info',
-    'PRIORITY':        'warning',
-    'TIMEOUT':         'warning',
-    'info':            'info',
-    'success':         'success',
-    'alert':           'alert',
-    'warning':         'warning',
-  }[evt.type] || 'info';
+  const typeClass = {
+    'OVERRIDE':        'alert',
+    'MANUAL_OVERRIDE': 'alert',
+    'RESUME':          'success',
+    'MANUAL_RESUME':   'success',
+    'TRIP_COMPLETE':   'success',
+    'CONNECT':         'info',
+    'DISCONNECT':      'info',
+    'ROUTE_ASSIGNED':  'info',
+    'PRIORITY':        'warning',
+    'TIMEOUT':         'warning',
+    'info':            'info',
+    'success':         'success',
+    'alert':           'alert',
+    'warning':         'warning',
+  }[evt.type] || 'info';
 
-  const div = document.createElement('div');
-  div.className = 'event-entry';
-  div.dataset.type = evt.type;
-  div.innerHTML = `
-    <span class="event-time">${evt.timestamp || nowStr()}</span>
-    <div class="event-dot ${typeClass}"></div>
-    <div class="event-text">${highlightIds(evt.message)}</div>
-  `;
+  const div = document.createElement('div');
+  div.className = 'event-entry';
+  div.dataset.type = evt.type;
+  div.innerHTML = `
+    <span class="event-time">${evt.timestamp || nowStr()}</span>
+    <div class="event-dot ${typeClass}"></div>
+    <div class="event-text">${highlightIds(evt.message)}</div>
+  `;
 
-  const logEl = document.getElementById('eventLog');
-  if (prepend) {
-    logEl.appendChild(div);
-  } else {
-    logEl.insertBefore(div, logEl.firstChild);
-  }
+  const logEl = document.getElementById('eventLog');
+  if (prepend) {
+    logEl.appendChild(div);
+  } else {
+    logEl.insertBefore(div, logEl.firstChild);
+  }
 
-  while (logEl.children.length > 200) logEl.removeChild(logEl.lastChild);
+  while (logEl.children.length > 200) logEl.removeChild(logEl.lastChild);
 }
 
 function highlightIds(msg) {
-  return msg
-    .replace(/(AMB-\d+)/g, '<b>$1</b>')
-    .replace(/(INT-\d+)/g, '<b style="color:var(--accent-cyan)">$1</b>')
-    .replace(/\b(RED|OVERRIDE)\b/g, '<b style="color:#f87171">$1</b>')
-    .replace(/\b(NORMAL|RESUME)\b/g, '<b style="color:#4ade80">$1</b>');
+  return msg
+    .replace(/(AMB-\d+)/g, '<b>$1</b>')
+    .replace(/(INT-\d+)/g, '<b style="color:var(--accent-cyan)">$1</b>')
+    .replace(/\b(RED|OVERRIDE)\b/g, '<b style="color:#f87171">$1</b>')
+    .replace(/\b(NORMAL|RESUME)\b/g, '<b style="color:#4ade80">$1</b>');
 }
 
 function filterLog(btn, type) {
-  document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  logFilter = type;
-  // Redraw log from cache
-  const logEl = document.getElementById('eventLog');
-  logEl.innerHTML = '';
-  const filtered = logFilter === 'all'
-    ? allLogEntries
-    : allLogEntries.filter(e => e.type === logFilter);
-  [...filtered].reverse().forEach(ev => addEventEntry(ev, false));
+  document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  logFilter = type;
+  // Redraw log from cache
+  const logEl = document.getElementById('eventLog');
+  logEl.innerHTML = '';
+  const filtered = logFilter === 'all'
+    ? allLogEntries
+    : allLogEntries.filter(e => e.type === logFilter);
+  [...filtered].reverse().forEach(ev => addEventEntry(ev, false));
 }
 
 function downloadCSV() {
-  const rows = [['Timestamp','Type','Message','Ambulance','Intersection']];
-  allLogEntries.forEach(e => rows.push([e.timestamp||'', e.type||'', e.message||'', e.amb_id||'', e.int_id||'']));
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = `navpath_log_${Date.now()}.csv`;
-  a.click();
+  const rows = [['Timestamp','Type','Message','Ambulance','Intersection']];
+  allLogEntries.forEach(e => rows.push([e.timestamp||'', e.type||'', e.message||'', e.amb_id||'', e.int_id||'']));
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `navpath_log_${Date.now()}.csv`;
+  a.click();
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] ROUTE ASSIGN MODAL → /api/assign_route
+//  [INTEGRATION] ROUTE ASSIGN MODAL → /api/assign_route
 // ══════════════════════════════════════════════
 function openRouteModal(ambId) {
-  selectedAmbId = ambId || selectedAmbId;
-  populateModalSelects();
-  document.getElementById('routeModal').classList.add('open');
-  setTimeout(initModalMap, 100);
+  selectedAmbId = ambId || selectedAmbId;
+  populateModalSelects();
+  document.getElementById('routeModal').classList.add('open');
+  setTimeout(initModalMap, 100);
 }
 
 function closeRouteModal() {
-  document.getElementById('routeModal').classList.remove('open');
+  document.getElementById('routeModal').classList.remove('open');
 }
 
 function populateModalSelects() {
-  // Ambulance select
-  const ambSel = document.getElementById('modalAmbSelect');
-  ambSel.innerHTML = Object.keys(ambData).length
-    ? Object.keys(ambData).map(id => `<option value="${id}" ${id === selectedAmbId ? 'selected' : ''}>${id}</option>`).join('')
-    : '<option value="">No active ambulances</option>';
+  // Ambulance select
+  const ambSel = document.getElementById('modalAmbSelect');
+  ambSel.innerHTML = Object.keys(ambData).length
+    ? Object.keys(ambData).map(id => `<option value="${id}" ${id === selectedAmbId ? 'selected' : ''}>${id}</option>`).join('')
+    : '<option value="">No active ambulances</option>';
 
-  // Route select
-  const routeSel = document.getElementById('modalRouteSelect');
-  routeSel.innerHTML = Object.values(routesData).map(r =>
-    `<option value="${r.id}">${r.name}</option>`
-  ).join('');
+  // Route select
+  const routeSel = document.getElementById('modalRouteSelect');
+  routeSel.innerHTML = Object.values(routesData).map(r =>
+    `<option value="${r.id}">${r.name}</option>`
+  ).join('');
 
-  onRouteSelectChange();
+  onRouteSelectChange();
 }
 
 function onRouteSelectChange() {
-  const routeId = document.getElementById('modalRouteSelect').value;
-  const route   = routesData[routeId];
-  if (!route) return;
+  const routeId = document.getElementById('modalRouteSelect').value;
+  const route   = routesData[routeId];
+  if (!route) return;
 
-  document.getElementById('modalNavpathEta').textContent = route.navpath_eta || '--:--';
-  document.getElementById('modalManualEta').textContent  = route.manual_eta  || '--:--';
-  document.getElementById('modalSavingNote').innerHTML   =
-    `✓ NavPath saves approximately <strong>${route.time_saved || '--'}</strong> on this route. Assignment will be pushed to driver instantly.`;
-
-  if (modalMapObj && route.origin_lat) {
-    modalMapObj.setView([route.origin_lat, route.origin_lon], 13);
-  }
+  if (modalMapObj && route.origin_lat) {
+    modalMapObj.setView([route.origin_lat, route.origin_lon], 13);
+  }
 }
 
 function initModalMap() {
-  if (modalMapInited) return;
-  modalMapInited = true;
-  modalMapObj = L.map('modalMap', { zoomControl: false, attributionControl: false })
-    .setView(MAP_CENTER, 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(modalMapObj);
+  if (modalMapInited) return;
+  modalMapInited = true;
+  modalMapObj = L.map('modalMap', { zoomControl: false, attributionControl: false })
+    .setView(MAP_CENTER, 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(modalMapObj);
 }
 
 // [INTEGRATION] POST to /api/assign_route
 async function confirmRoute() {
-  const ambId   = document.getElementById('modalAmbSelect').value;
-  const routeId = document.getElementById('modalRouteSelect').value;
+  const ambId   = document.getElementById('modalAmbSelect').value;
+  const routeId = document.getElementById('modalRouteSelect').value;
 
-  if (!ambId || !routeId) { alert('Select both ambulance and route.'); return; }
+  if (!ambId || !routeId) { alert('Select both ambulance and route.'); return; }
 
-  try {
-    const res = await fetch('/api/assign_route', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amb_id: ambId, route_id: routeId })
-    });
-    const data = await res.json();
-    if (data.status === 'ok') {
-      closeRouteModal();
-      addEventEntry({ type:'ROUTE_ASSIGNED', message:`Route ${data.route.name} assigned to ${ambId}`, timestamp: nowStr() });
-    } else {
-      alert('Assignment failed: ' + JSON.stringify(data));
-    }
-  } catch (e) {
-    alert('Network error: ' + e.message);
-  }
+  try {
+    const res = await fetch('/api/assign_route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amb_id: ambId, route_id: routeId })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      closeRouteModal();
+      addEventEntry({ type:'ROUTE_ASSIGNED', message:`Route ${data.route.name} assigned to ${ambId}`, timestamp: nowStr() });
+    } else {
+      alert('Assignment failed: ' + JSON.stringify(data));
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] PRIORITY CHANGE → /api/set_priority
+//  [INTEGRATION] PRIORITY CHANGE → /api/set_priority
 // ══════════════════════════════════════════════
 async function changePriority(ambId) {
-  const opts = ['RED', 'YELLOW', 'GREEN', 'NONE'];
-  const current = (ambData[ambId] && ambData[ambId].priority) || 'NONE';
-  const chosen = prompt(`Set priority for ${ambId}:\nOptions: RED / YELLOW / GREEN / NONE\nCurrent: ${current}`, current);
-  if (!chosen || !opts.includes(chosen.toUpperCase())) return;
+  const opts = ['RED', 'YELLOW', 'GREEN', 'NONE'];
+  const current = (ambData[ambId] && ambData[ambId].priority) || 'NONE';
+  const chosen = prompt(`Set priority for ${ambId}:\nOptions: RED / YELLOW / GREEN / NONE\nCurrent: ${current}`, current);
+  if (!chosen || !opts.includes(chosen.toUpperCase())) return;
 
-  try {
-    await fetch('/api/set_priority', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amb_id: ambId, priority: chosen.toUpperCase() })
-    });
-  } catch (e) {
-    alert('Network error: ' + e.message);
-  }
+  try {
+    await fetch('/api/set_priority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amb_id: ambId, priority: chosen.toUpperCase() })
+    });
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] ABORT TRIP → /api/end_trip
+//  [INTEGRATION] ABORT TRIP → /api/end_trip
 // ══════════════════════════════════════════════
 async function abortTrip(ambId) {
-  if (!confirm(`Abort trip for ${ambId}? All intersection overrides will be released.`)) return;
+  if (!confirm(`Abort trip for ${ambId}? All intersection overrides will be released.`)) return;
 
-  try {
-    await fetch('/api/end_trip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amb_id: ambId })
-    });
-  } catch (e) {
-    alert('Network error: ' + e.message);
-  }
+  try {
+    await fetch('/api/end_trip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amb_id: ambId })
+    });
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] ANALYTICS PAGE → /api/stats
+//  [INTEGRATION] ANALYTICS PAGE → /api/stats
 // ══════════════════════════════════════════════
 async function loadAnalyticsStats() {
-  try {
-    const res  = await fetch('/api/stats');
-    const data = await res.json();
-    document.getElementById('an-trips').textContent       = data.total_trips       || 0;
-    document.getElementById('an-overrides').textContent   = data.total_overrides   || 0;
-    document.getElementById('an-resumes').textContent     = data.total_resumes     || 0;
-    document.getElementById('an-cleared').textContent     = data.intersections_cleared || 0;
-    document.getElementById('an-saved').textContent       = data.time_saved_str    || '0:00';
-    document.getElementById('an-uptime').textContent      = data.uptime_s          || 0;
-    document.getElementById('an-ambulances').textContent  = data.ambulances        || 0;
-  } catch (e) {
-    console.error('Stats load error:', e);
-  }
+  try {
+    const res  = await fetch('/api/stats');
+    const data = await res.json();
+    document.getElementById('an-trips').textContent       = data.total_trips       || 0;
+    document.getElementById('an-overrides').textContent   = data.total_overrides   || 0;
+    document.getElementById('an-resumes').textContent     = data.total_resumes     || 0;
+    document.getElementById('an-cleared').textContent     = data.intersections_cleared || 0;
+    document.getElementById('an-uptime').textContent      = data.uptime_s          || 0;
+    document.getElementById('an-ambulances').textContent  = data.ambulances        || 0;
+  } catch (e) {
+    console.error('Stats load error:', e);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] FLEET PAGE → /api/fleet
+//  [INTEGRATION] FLEET PAGE → /api/fleet
 // ══════════════════════════════════════════════
 async function loadFleet() {
-  const tbody = document.getElementById('fleetTableBody');
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading...</td></tr>';
+  const tbody = document.getElementById('fleetTableBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading...</td></tr>';
 
-  try {
-    const res  = await fetch('/api/fleet');
-    const data = await res.json();
+  try {
+    const res  = await fetch('/api/fleet');
+    const data = await res.json();
 
-    const statusColor = { active:'var(--green)', standby:'var(--text-secondary)', offline:'var(--red)' };
-    const serviceLabel = { ok:'✓ OK', due:'⚠ Due service', in_service:'✕ In service' };
-    const serviceColor = { ok:'var(--green)', due:'var(--yellow)', in_service:'var(--red)' };
+    const statusColor = { active:'var(--green)', standby:'var(--text-secondary)', offline:'var(--red)' };
+    const serviceLabel = { ok:'✓ OK', due:'⚠ Due service', in_service:'✕ In service' };
+    const serviceColor = { ok:'var(--green)', due:'var(--yellow)', in_service:'var(--red)' };
 
-    tbody.innerHTML = data.map(v => `
-      <tr>
-        <td>${v.id}</td>
-        <td style="color:var(--text-primary)">${v.driver}</td>
-        <td><span style="color:${statusColor[v.status] || 'var(--text-secondary)'}">● ${v.status.charAt(0).toUpperCase()+v.status.slice(1)}</span></td>
-        <td style="font-size:11px;">${v.last_location}</td>
-        <td style="font-family:'Share Tech Mono',monospace;color:var(--accent-cyan)">${v.trips_month}</td>
-        <td style="font-family:'Share Tech Mono',monospace;">${v.speed ? v.speed+' km/h' : '—'}</td>
-        <td style="color:${serviceColor[v.service_status] || 'var(--text-secondary)'}">${serviceLabel[v.service_status] || v.service_status}</td>
-      </tr>
-    `).join('');
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:20px;">Error loading fleet: ${e.message}</td></tr>`;
-  }
+    tbody.innerHTML = data.map(v => `
+      <tr>
+        <td>${v.id}</td>
+        <td style="color:var(--text-primary)">${v.driver}</td>
+        <td><span style="color:${statusColor[v.status] || 'var(--text-secondary)'}">● ${v.status.charAt(0).toUpperCase()+v.status.slice(1)}</span></td>
+        <td style="font-size:11px;">${v.last_location}</td>
+        <td style="font-family:'Share Tech Mono',monospace;color:var(--accent-cyan)">${v.trips_month}</td>
+        <td style="font-family:'Share Tech Mono',monospace;">${v.speed ? v.speed+' km/h' : '—'}</td>
+        <td style="color:${serviceColor[v.service_status] || 'var(--text-secondary)'}">${serviceLabel[v.service_status] || v.service_status}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:20px;">Error loading fleet: ${e.message}</td></tr>`;
+  }
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] SYSTEM HEALTH PAGE → /api/system_health
+//  [INTEGRATION] SYSTEM HEALTH PAGE → /api/system_health
 // ══════════════════════════════════════════════
 async function loadSystemHealth() {
-  try {
-    const res  = await fetch('/api/system_health');
-    const data = await res.json();
+  try {
+    const res  = await fetch('/api/system_health');
+    const data = await res.json();
 
-    const memPct = Math.round(data.memory_mb / data.memory_total_mb * 100);
+    const memPct = Math.round(data.memory_mb / data.memory_total_mb * 100);
 
-    document.getElementById('healthGrid').innerHTML = `
-      <div class="health-card">
-        <div class="health-val">${data.uptime_pct}%</div>
-        <div class="health-label">Server Uptime</div>
-        <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">${data.uptime_str} running</div>
-      </div>
-      <div class="health-card">
-        <div class="health-val">${data.modules_online}/${data.modules_total}</div>
-        <div class="health-label">Modules Online</div>
-      </div>
-      <div class="health-card">
-        <div class="health-val">${data.latency_ms}ms</div>
-        <div class="health-label">Avg Packet Latency</div>
-      </div>
-      <div class="health-card">
-        <div class="health-val warn">${data.security_events}</div>
-        <div class="health-label">Security Events (Rejected)</div>
-      </div>
-      <div class="health-card">
-        <div class="health-val">${data.last_backup}</div>
-        <div class="health-label">Last Backup</div>
-        <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">Today ${data.last_backup} · Success</div>
-      </div>
-      <div class="health-card">
-        <div class="health-val">${data.memory_mb}MB</div>
-        <div class="health-label">Memory Usage</div>
-        <div style="font-size:10px;color:var(--green);margin-top:4px;">${memPct}% of ${data.memory_total_mb}MB</div>
-      </div>
-    `;
+    document.getElementById('healthGrid').innerHTML = `
+      <div class="health-card">
+        <div class="health-val">${data.uptime_pct}%</div>
+        <div class="health-label">Server Uptime</div>
+        <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">${data.uptime_str} running</div>
+      </div>
+      <div class="health-card">
+        <div class="health-val">${data.modules_online}/${data.modules_total}</div>
+        <div class="health-label">Modules Online</div>
+      </div>
+      <div class="health-card">
+        <div class="health-val">${data.latency_ms}ms</div>
+        <div class="health-label">Avg Packet Latency</div>
+      </div>
+      <div class="health-card">
+        <div class="health-val warn">${data.security_events}</div>
+        <div class="health-label">Security Events (Rejected)</div>
+      </div>
+      <div class="health-card">
+        <div class="health-val">${data.last_backup}</div>
+        <div class="health-label">Last Backup</div>
+        <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">Today ${data.last_backup} · Success</div>
+      </div>
+      <div class="health-card">
+        <div class="health-val">${data.memory_mb}MB</div>
+        <div class="health-label">Memory Usage</div>
+        <div style="font-size:10px;color:var(--green);margin-top:4px;">${memPct}% of ${data.memory_total_mb}MB</div>
+      </div>
+    `;
 
-    const tbody = document.getElementById('moduleTableBody');
-    tbody.innerHTML = data.modules.map(m => {
-      const stColor = m.online ? (m.power === 'ups' ? 'var(--yellow)' : 'var(--green)') : 'var(--red)';
-      const stText  = m.online ? (m.power === 'ups' ? 'Online/UPS' : 'Online') : 'Offline';
-      return `
-        <tr>
-          <td>${m.module}</td>
-          <td style="color:var(--text-primary);">${m.location}</td>
-          <td><span style="color:${stColor}">● ${stText}</span></td>
-          <td style="font-family:'Share Tech Mono',monospace;color:${m.online ? 'inherit' : 'var(--red)'};">${m.last_beat}</td>
-          <td>${m.firmware}</td>
-          <td style="color:${m.tamper === 'Clear' ? 'var(--green)' : 'var(--text-secondary)'};">${m.tamper}</td>
-        </tr>`;
-    }).join('');
-  } catch (e) {
-    document.getElementById('healthGrid').innerHTML = `<div class="health-card"><div class="health-val" style="color:var(--red)">Error</div><div class="health-label">${e.message}</div></div>`;
-  }
+    const tbody = document.getElementById('moduleTableBody');
+    tbody.innerHTML = data.modules.map(m => {
+      const stColor = m.online ? (m.power === 'ups' ? 'var(--yellow)' : 'var(--green)') : 'var(--red)';
+      const stText  = m.online ? (m.power === 'ups' ? 'Online/UPS' : 'Online') : 'Offline';
+      return `
+        <tr>
+          <td>${m.module}</td>
+          <td style="color:var(--text-primary);">${m.location}</td>
+          <td><span style="color:${stColor}">● ${stText}</span></td>
+          <td style="font-family:'Share Tech Mono',monospace;color:${m.online ? 'inherit' : 'var(--red)'};">${m.last_beat}</td>
+          <td>${m.firmware}</td>
+          <td style="color:${m.tamper === 'Clear' ? 'var(--green)' : 'var(--text-secondary)'};">${m.tamper}</td>
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('healthGrid').innerHTML = `<div class="health-card"><div class="health-val" style="color:var(--red)">Error</div><div class="health-label">${e.message}</div></div>`;
+  }
 }
 
 // ══════════════════════════════════════════════
-//  CHARTS (analytics page)
+//  CHARTS (analytics page)
 // ══════════════════════════════════════════════
 function renderCharts() {
-  if (chartsRendered) return;
-  chartsRendered = true;
-  Chart.defaults.color = '#6b8aaa';
-  Chart.defaults.borderColor = '#1e2e42';
+  if (chartsRendered) return;
+  chartsRendered = true;
+  Chart.defaults.color = '#6b8aaa';
+  Chart.defaults.borderColor = '#1e2e42';
 
-  new Chart(document.getElementById('responseChart'), {
-    type: 'line',
-    data: {
-      labels: Array.from({length:30},(_,i)=>`D-${30-i}`),
-      datasets: [{
-        label: 'Response Time (min)',
-        data: [6.2,5.8,6.0,5.5,5.9,5.3,4.9,5.1,4.8,5.2,4.9,4.6,4.8,4.5,4.7,4.4,4.6,4.3,4.5,4.2,4.4,4.3,4.5,4.2,4.1,4.3,4.4,4.2,4.1,4.3],
-        borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,0.08)', tension:0.3, pointRadius:2, fill:true
-      }]
-    },
-    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#1e2e42'},min:3},x:{grid:{color:'#1e2e42'},ticks:{maxTicksLimit:6}}}}
-  });
+  new Chart(document.getElementById('responseChart'), {
+    type: 'line',
+    data: {
+      labels: Array.from({length:30},(_,i)=>`D-${30-i}`),
+      datasets: [{
+        label: 'Response Time (min)',
+        data: [6.2,5.8,6.0,5.5,5.9,5.3,4.9,5.1,4.8,5.2,4.9,4.6,4.8,4.5,4.7,4.4,4.6,4.3,4.5,4.2,4.4,4.3,4.5,4.2,4.1,4.3,4.4,4.2,4.1,4.3],
+        borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,0.08)', tension:0.3, pointRadius:2, fill:true
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#1e2e42'},min:3},x:{grid:{color:'#1e2e42'},ticks:{maxTicksLimit:6}}}}
+  });
 
-  new Chart(document.getElementById('volumeChart'), {
-    type: 'bar',
-    data: {
-      labels:['00','02','04','06','08','10','12','14','16','18','20','22'],
-      datasets:[{data:[1,0,1,2,3,4,5,7,6,8,5,3],backgroundColor:'rgba(6,214,199,0.5)',borderColor:'#06d6c7',borderWidth:1}]
-    },
-    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#1e2e42'}},x:{grid:{color:'#1e2e42'}}}}
-  });
+  new Chart(document.getElementById('volumeChart'), {
+    type: 'bar',
+    data: {
+      labels:['00','02','04','06','08','10','12','14','16','18','20','22'],
+      datasets:[{data:[1,0,1,2,3,4,5,7,6,8,5,3],backgroundColor:'rgba(6,214,199,0.5)',borderColor:'#06d6c7',borderWidth:1}]
+    },
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#1e2e42'}},x:{grid:{color:'#1e2e42'}}}}
+  });
 
-  new Chart(document.getElementById('priorityChart'), {
-    type: 'doughnut',
-    data: {
-      labels:['Red Priority','Yellow Priority','Green Priority'],
-      datasets:[{data:[45,35,20],backgroundColor:['rgba(239,68,68,0.7)','rgba(234,179,8,0.7)','rgba(34,197,94,0.7)'],borderColor:['#ef4444','#eab308','#22c55e'],borderWidth:1}]
-    },
-    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:11}}}}}
-  });
+  new Chart(document.getElementById('priorityChart'), {
+    type: 'doughnut',
+    data: {
+      labels:['Red Priority','Yellow Priority','Green Priority'],
+      datasets:[{data:[45,35,20],backgroundColor:['rgba(239,68,68,0.7)','rgba(234,179,8,0.7)','rgba(34,197,94,0.7)'],borderColor:['#ef4444','#eab308','#22c55e'],borderWidth:1}]
+    },
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:11}}}}}
+  });
 
-  new Chart(document.getElementById('heatmapChart'), {
-    type: 'bar',
-    data: {
-      labels:['INT-1','INT-2','INT-3','INT-4'],
-      datasets:[{
-        data:[8,11,12,6],
-        backgroundColor:['rgba(14,165,233,0.5)','rgba(14,165,233,0.6)','rgba(239,68,68,0.7)','rgba(14,165,233,0.4)'],
-        borderWidth:1
-      }]
-    },
-    options:{responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e2e42'}},y:{grid:{color:'#1e2e42'}}}}
-  });
+  new Chart(document.getElementById('heatmapChart'), {
+    type: 'bar',
+    data: {
+      labels:['INT-1','INT-2','INT-3','INT-4'],
+      datasets:[{
+        data:[8,11,12,6],
+        backgroundColor:['rgba(14,165,233,0.5)','rgba(14,165,233,0.6)','rgba(239,68,68,0.7)','rgba(14,165,233,0.4)'],
+        borderWidth:1
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e2e42'}},y:{grid:{color:'#1e2e42'}}}}
+  });
 }
 
 // ══════════════════════════════════════════════
-//  UTILITIES
+//  UTILITIES
 // ══════════════════════════════════════════════
 function formatEta(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2,'0')}`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2,'0')}`;
 }
 
 function nowStr() {
-  const n = new Date();
-  return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  const n = new Date();
+  return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
 }
 
 // ══════════════════════════════════════════════
-//  [INTEGRATION] REST FALLBACK — load map data if WS is slow
+//  [INTEGRATION] REST FALLBACK — load map data if WS is slow
 // ══════════════════════════════════════════════
 fetch('/api/map_data')
-  .then(r => r.ok ? r.json() : null)
-  .then(data => {
-    if (!data) return;
-    if (!Object.keys(intMarkers).length && data.intersections) {
-      buildIntersectionUI(data.intersections);
-    }
-    if (data.routes) data.routes.forEach(r => routesData[r.id] = r);
-    if (data.center) map.setView([data.center.lat, data.center.lon], data.center.zoom || 13);
-  })
-  .catch(() => {});
+  .then(r => r.ok ? r.json() : null)
+  .then(data => {
+    if (!data) return;
+    if (!Object.keys(intMarkers).length && data.intersections) {
+      buildIntersectionUI(data.intersections);
+    }
+    if (data.routes) data.routes.forEach(r => routesData[r.id] = r);
+    if (data.center) map.setView([data.center.lat, data.center.lon], data.center.zoom || 13);
+  })
+  .catch(() => {});
 
 fetch('/api/events')
-  .then(r => r.ok ? r.json() : [])
-  .then(evts => {
-    if (!evts.length) return;
-    evts.forEach(ev => addEventEntry(ev, true));
-  })
-  .catch(() => {});
+  .then(r => r.ok ? r.json() : [])
+  .then(evts => {
+    if (!evts.length) return;
+    evts.forEach(ev => addEventEntry(ev, true));
+  })
+  .catch(() => {});
 
 // Show dispatch page on load
 document.getElementById('page-dispatch').style.display = 'flex';
