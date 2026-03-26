@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>NavPath · Emergency Fleet v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
   --bg:#07090d; --s1:#0e1318; --s2:#141a22; --s3:#1b2333;
@@ -656,9 +657,9 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
             <text class="spUnit" x="55" y="68">KM/H</text>
           </svg>
         </div>
-        <div class="scard"><div class="sv" style="color:var(--green)">7</div><div class="sl">Trips</div></div>
-        <div class="scard"><div class="sv" style="color:var(--yellow)">23m</div><div class="sl">Saved</div></div>
-        <div class="scard"><div class="sv" style="color:var(--orange)">4</div><div class="sl">Cleared</div></div>
+        <div class="scard"><div class="sv" id="homeTripsVal" style="color:var(--green)">0</div><div class="sl">Trips</div></div>
+        <div class="scard"><div class="sv" id="homeSavedVal" style="color:var(--yellow)">0m</div><div class="sl">Saved</div></div>
+        <div class="scard"><div class="sv" id="homeClearedVal" style="color:var(--orange)">0</div><div class="sl">Cleared</div></div>
       </div>
 
       <!-- Info bar -->
@@ -725,7 +726,7 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
       <!-- Emergency btn -->
       <div class="emerWrap">
         <div class="emerGlow"></div>
-        <button class="emerBtn" onclick="goTo('sRoute')">⚡ START EMERGENCY</button>
+        <button class="emerBtn" onclick="startEmergency()">⚡ START EMERGENCY</button>
       </div>
     </div>
   </div>
@@ -748,8 +749,8 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
       <div class="rCard">
         <div class="sectionLbl">Route</div>
         <div class="rPts">
-          <div class="rPt"><div class="rSpine"><div class="rNode f"></div><div class="rLine"></div></div><div class="rInfo"><h4 id="rFrom">AIIMS Main Gate</h4><p>Ansari Nagar East, New Delhi</p></div></div>
-          <div class="rPt"><div class="rSpine"><div class="rNode t"></div></div><div class="rInfo"><h4 id="rTo">Safdarjung Hospital</h4><p>Sri Aurobindo Marg, New Delhi</p></div></div>
+          <div class="rPt"><div class="rSpine"><div class="rNode f"></div><div class="rLine"></div></div><div class="rInfo"><h4 id="rFrom">AIIMS Main Gate</h4></div></div>
+          <div class="rPt"><div class="rSpine"><div class="rNode t"></div></div><div class="rInfo"><h4 id="rTo">Safdarjung Hospital</h4></div></div>
         </div>
       </div>
       <div class="rCard">
@@ -808,7 +809,7 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
     <button class="pBtn pr"   id="pRout" onclick="setPrio('routine')">🟢 Routine</button>
   </div>
   <div class="navActions">
-    <button class="btnSec" style="flex:1;padding:11px;font-size:13px" onclick="cycleBanner()">↻ Sim State</button>
+    <button class="btnSec" style="flex:1;padding:11px;font-size:13px;background:var(--red);color:#fff;border-color:var(--red)" onclick="abortTrip()">✕ End Trip</button>
     <button class="btnArrive" onclick="arrive()">Arrive at Destination →</button>
   </div>
 </div>
@@ -817,17 +818,20 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
 <div class="screen" id="sComplete">
   <div class="compWrap">
     <div class="compIcoWrap"><div class="compIco">✓</div><div class="compIcoRing"></div></div>
-    <div class="compTitle">Patient Pickup Reached</div>
-    <div class="compSub" id="compSub">SAFDARJUNG HOSPITAL · –</div>
+    <div class="compTitle" id="compTitle">Patient Pickup Reached</div>
+    <div class="compSub" id="compSub">HOSPITAL · –</div>
     <div class="stats3">
-      <div class="s3c"><div class="s3v">9m</div><div class="s3l">Trip Time</div></div>
-      <div class="s3c"><div class="s3v" style="color:var(--green)">4</div><div class="s3l">Cleared</div></div>
-      <div class="s3c"><div class="s3v">4.2</div><div class="s3l">km</div></div>
+      <div class="s3c"><div class="s3v" id="compTripTime">–</div><div class="s3l">Trip Time</div></div>
+      <div class="s3c"><div class="s3v" id="compCleared" style="color:var(--green)">–</div><div class="s3l">Cleared</div></div>
+      <div class="s3c"><div class="s3v" id="compDist">–</div><div class="s3l">km</div></div>
     </div>
-    <div class="savedBox"><div class="sv">+4m 23s</div><div class="sl">⚡ NavPath saved this much time vs normal traffic</div></div>
+    <div class="savedBox">
+      <div class="sv" id="compSaved">–</div>
+      <div class="sl">⚡ NavPath saved this much time vs normal traffic</div>
+    </div>
     <div class="compBtns">
-      <button class="cBtn prim" onclick="goTo('sRoute')">↩ Start Return Trip</button>
-      <button class="cBtn" onclick="goTo('sHome')">✓ End Trip</button>
+      <button class="cBtn prim" onclick="startReturnTrip()">↩ Start Return Trip</button>
+      <button class="cBtn" onclick="finishTrip()">✓ Done — Save Trip</button>
       <button class="cBtn danger" onclick="toast('⚠ Incident report logged')">⚠ Report Incident</button>
     </div>
   </div>
@@ -883,6 +887,7 @@ a[href^="https://maps.google.com/maps"] { display: none !important; }
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2QoXXiv_CNdPDnO4ezJ1yWNURDxmwqA8&libraries=geometry,places,marker"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ═══════════════════════════════════════
    MAP STYLE
@@ -933,6 +938,7 @@ const APP = {
   navEtaSec: 574,
   navTimer: null,
   navProgress: 0,
+  navTotalDist: 0,     // total route distance in meters
   homeMap: null,
   navMap: null,
   homeMarker: null,
@@ -985,18 +991,19 @@ function goTo(id){
       const fromEl = document.getElementById('rFrom');
       if(fromEl) fromEl.textContent = document.getElementById('addrTxt')?.textContent || 'Current Location';
     }
-    stopGpsLoop(); // not navigating, stop posting GPS
+    stopGpsLoop();
   }
   if(id==='sNav'){
+    APP.tripStart = new Date();
     initNavMap();
     startNavTimer();
-    startGpsLoop();  // start sending GPS to server
+    startGpsLoop();
   }
   if(id==='sRoute'){
     document.getElementById('dispTime').textContent = now12();
     const fromEl = document.getElementById('rFrom');
     if(fromEl && APP.gps) fromEl.textContent = document.getElementById('addrTxt')?.textContent || 'Current Location';
-    populateServerRoutes(); // populate dropdown from server routes
+    populateServerRoutes();
     if(APP.gps) fetchNearbyHospitals(APP.gps.lat, APP.gps.lng);
     else if(APP.gpsMode === 'sim') fetchNearbyHospitals(28.5672, 77.2100);
   }
@@ -1005,12 +1012,240 @@ function goTo(id){
     const destName = APP.navDestName || 'Hospital';
     document.getElementById('compSub').textContent = destName.toUpperCase() + ' · ' + now12();
     document.getElementById('compTitle').textContent = '🏥 Arrived at ' + destName;
-    const elapsed = APP.navEtaSec != null ? Math.round(Math.abs((APP.navTotalSec||574) - APP.navEtaSec)) : 574;
-    const m = Math.floor(elapsed/60), s = elapsed%60;
-    const timeEl = document.getElementById('compTime');
-    if(timeEl) timeEl.textContent = m + 'm ' + (s<10?'0':'') + s + 's';
+
+    // ── Trip Time (real elapsed) ──
+    let tripSec = 0;
+    if(APP.tripStart){
+      tripSec = Math.round((new Date() - APP.tripStart) / 1000);
+      const m = Math.floor(tripSec/60), s = tripSec % 60;
+      const timeEl = document.getElementById('compTripTime');
+      if(timeEl) timeEl.textContent = m + 'm ' + (s<10?'0':'') + s + 's';
+    }
+
+    // ── Intersections Cleared (route step count) ──
+    const clrEl = document.getElementById('compCleared');
+    if(clrEl){
+      // Prefer server-tracked cleared count, fall back to step count
+      const srvCleared = APP.serverStats?.intersections_cleared;
+      const stepCleared = APP._navSteps ? Math.max(0, APP._navSteps.length - 2) : 0;
+      clrEl.textContent = (typeof srvCleared === 'number' && srvCleared > 0) ? srvCleared : stepCleared;
+    }
+
+    // ── Distance (from real OSRM route distance) ──
+    const distEl = document.getElementById('compDist');
+    if(distEl){
+      if(APP.navTotalDist && APP.navTotalDist > 0){
+        distEl.textContent = (APP.navTotalDist / 1000).toFixed(1);
+      } else if(APP.navTotalSec > 0){
+        // rough fallback: avg 40 km/h for the route
+        distEl.textContent = ((APP.navTotalSec / 3600) * 40).toFixed(1);
+      } else {
+        distEl.textContent = '–';
+      }
+    }
+
+    // ── Time Saved vs normal traffic ──
+    const savedEl = document.getElementById('compSaved');
+    if(savedEl){
+      const rawSavedSec = Math.max(0, Math.min((APP.navTotalSec || 0) - tripSec, 7200));
+      const sm = Math.floor(rawSavedSec / 60), ss = rawSavedSec % 60;
+      savedEl.textContent = rawSavedSec > 0
+        ? '+' + sm + 'm ' + (ss < 10 ? '0' : '') + ss + 's'
+        : 'Great drive!';
+    }
+
     rateStar(0);
   }
+}
+
+// ── Guard: block trip start when off duty ──
+function startEmergency(){
+  if(!APP.duty){
+    toast('🔴 Switch to On Duty before starting a trip!');
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+    // Briefly flash the duty toggle to draw attention
+    const tog = document.getElementById('dutyTog');
+    if(tog){ tog.style.boxShadow='0 0 18px var(--red-glow)'; setTimeout(()=>tog.style.boxShadow='',1200); }
+    return;
+  }
+  goTo('sRoute');
+}
+
+function clearNavState() {
+  APP.routeId = '';
+  APP.navRoute = null;
+  APP.navDestName = null;
+  APP.navDestCoord = null;
+  APP._pendingDirectionsResult = null;
+  APP._navSteps = null;
+  APP.navProgress = 0;
+  APP.navTotalDist = 0;
+  // Reset nav UI elements
+  const rpFill = document.getElementById('rpFill');
+  if(rpFill) rpFill.style.width = '0%';
+  const rpLabel = document.getElementById('rpLabel');
+  if(rpLabel) rpLabel.textContent = '0%';
+  const bDist = document.getElementById('bDist');
+  if(bDist) bDist.textContent = '–';
+  const bEta = document.getElementById('bEta');
+  if(bEta) bEta.textContent = '';
+  const bStatus = document.getElementById('bStatus');
+  if(bStatus) bStatus.textContent = '⬤  APPROACHING';
+  const bName = document.getElementById('bName');
+  if(bName) bName.textContent = 'Calculating route…';
+  const banner = document.getElementById('intBanner');
+  if(banner) banner.className = 'intBanner approaching';
+  if(APP.navPolyline) APP.navPolyline.setLatLngs([]);
+  if(APP.navMap && APP._routeMarkers) {
+    APP._routeMarkers.forEach(m => APP.navMap.removeLayer(m));
+  }
+  APP._routeMarkers = [];
+  const srvSel = document.getElementById('srvRouteSel');
+  if(srvSel) srvSel.value = '';
+  const rList = document.getElementById('routeIntList');
+  if(rList) rList.innerHTML = '<div style="padding:12px;font-family:var(--fM);font-size:10px;color:var(--txt3);text-align:center">Select a NavPath Route above to see intersections</div>';
+  const ndot = document.getElementById('navDot');
+  if(ndot) ndot.classList.remove('show');
+}
+
+function saveTripToHistory() {
+  if(!APP.user) return;
+  APP.user.trips = APP.user.trips || [];
+  let durStr = "0m";
+  let tripSec = 0;
+  if(APP.tripStart){
+    tripSec = Math.round((new Date() - APP.tripStart)/1000);
+    const m = Math.floor(tripSec/60), s = tripSec%60;
+    durStr = m + 'm ' + s + 's';
+  }
+  const totalInts = APP._navSteps ? Math.max(0, APP._navSteps.length - 2) : 0;
+  // Calculate time saved: original ETA − actual trip time (capped at 2 hours)
+  const rawSavedSec = (APP.navTotalSec || 0) - tripSec;
+  const savedSec    = Math.max(0, Math.min(rawSavedSec, 7200)); // cap at 2 h
+  const savedMin    = Math.floor(savedSec / 60);
+  const savedS      = savedSec % 60;
+  const timeSavedStr = savedMin > 0 ? ('+' + savedMin + 'm ' + savedS + 's') : (savedSec > 0 ? ('+' + savedS + 's') : '0s');
+  const dateStr = 'Today ' + now12();
+  const sf = document.getElementById('rFrom');
+  const st = document.getElementById('rTo');
+  const rtName = (sf?.textContent?.split(',')[0] || 'Unknown') + ' → ' + (st?.textContent || APP.navDestName || 'Destination');
+  
+  APP.user.trips.push({
+    dateStr: dateStr,
+    routeName: rtName,
+    durationStr: durStr,
+    clearCount: totalInts,
+    timeSavedSec: savedSec,     // ← reliable numeric field
+    timeSavedStr: timeSavedStr  // ← human-readable display
+  });
+  const all = DB.get();
+  const idx = all.findIndex(u => u.id === APP.user.id);
+  if(idx >= 0) { all[idx] = APP.user; DB.save(all); }
+  renderTrips(APP.user);
+  updateHomeTripStats(APP.user);
+  APP.tripStart = null;
+}
+
+function finishTrip() {
+  saveTripToHistory();
+  clearNavState();
+  goTo('sHome');
+  toast('✅ Trip saved to history');
+}
+
+function startReturnTrip() {
+  saveTripToHistory();
+  clearNavState();
+  goTo('sRoute');
+}
+
+function renderTrips(u){
+  const tb = document.getElementById('tripBody');
+  const chev = document.getElementById('tripChev');
+  if(!tb || !chev) return;
+  const countLbl = chev.previousElementSibling;
+  
+  if(!u.trips || !u.trips.length){
+    tb.innerHTML = '<div style="padding:15px;text-align:center;color:var(--txt3);font-size:12px">No trips yet</div>';
+    if(countLbl) countLbl.textContent = '0 trips';
+    return;
+  }
+  
+  const sorted = u.trips.slice().reverse();
+  if(countLbl) countLbl.textContent = sorted.length + ' trips';
+  
+  tb.innerHTML = '';
+  sorted.forEach(t => {
+    const savedHtml = t.timeSavedStr ? `<div class="tripSave">${t.timeSavedStr}</div>` : '';
+    tb.innerHTML += `
+      <div class="tripItem">
+        <div class="tripBadge">🚑</div>
+        <div class="tripI">
+          <div class="tr">${t.routeName}</div>
+          <div class="td">${t.dateStr} · ${t.durationStr} · ${t.clearCount} junctions</div>
+        </div>
+        ${savedHtml}
+      </div>
+    `;
+  });
+}
+
+function updateHomeTripStats(u) {
+  if(!u || !u.trips) return;
+  const trips = u.trips;
+  // Total trips
+  const tripsEl = document.getElementById('homeTripsVal');
+  if(tripsEl) tripsEl.textContent = trips.length;
+  // Total cleared
+  const cleared = trips.reduce((sum, t) => sum + (parseInt(t.clearCount) || 0), 0);
+  const clearedEl = document.getElementById('homeClearedEl') || document.getElementById('homeClearedVal');
+  if(clearedEl) clearedEl.textContent = cleared;
+  // Total time saved — prefer numeric timeSavedSec, fall back to string parsing with a 2-hour sanity cap
+  const MAX_PER_TRIP = 7200; // 2 hours in seconds — blocks corrupt old data
+  let totalSavedSec = 0;
+  trips.forEach(t => {
+    if(typeof t.timeSavedSec === 'number' && isFinite(t.timeSavedSec)) {
+      // Reliable numeric path (new trips)
+      totalSavedSec += Math.min(Math.max(0, t.timeSavedSec), MAX_PER_TRIP);
+    } else if(t.timeSavedStr) {
+      // Legacy string path — extract minutes & seconds with sanity bounds
+      const mMatch = t.timeSavedStr.match(/(\d{1,4})m/);  // max 4-digit minutes = 1666h, safely bounded below
+      const sMatch = t.timeSavedStr.match(/(\d{1,2})s/);  // max 2-digit seconds
+      const mins   = mMatch ? parseInt(mMatch[1]) : 0;
+      const secs   = sMatch ? parseInt(sMatch[1]) : 0;
+      const parsed = mins * 60 + secs;
+      if(parsed <= MAX_PER_TRIP) totalSavedSec += parsed; // skip corrupt entries
+    }
+  });
+  const totalMin = Math.floor(totalSavedSec / 60);
+  const totalSec = totalSavedSec % 60;
+  const savedSel = document.getElementById('homeSavedVal');
+  if(savedSel) savedSel.textContent = totalMin > 0 ? totalMin + 'm' : totalSavedSec + 's';
+}
+
+function abortTrip(){
+  if(!confirm('Are you sure you want to end this trip?')) return;
+  clearInterval(APP.navTimer);
+  APP.navTimer = null;
+  stopGpsLoop();
+  if(APP.routeId){
+    fetch(SERVER_URL+'/api/end_trip',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({amb_id:APP.ambId})
+    })
+    .then(()=>{ APP.routeId=''; })
+    .catch(e=>console.warn('end_trip failed',e));
+  }
+  // Save a partial trip entry
+  if(APP.tripStart && APP.user) {
+    saveTripToHistory();
+  } else {
+    APP.tripStart = null;
+  }
+  clearNavState();
+  goTo('sHome');
+  toast('Trip ended');
 }
 
 /* ═══════════════════════════════════════
@@ -1150,8 +1385,31 @@ function applyUser(u){
   document.getElementById('setAmb').textContent=u.amb+' · NavPath v4.0';
   document.getElementById('setAvatar').textContent=init.toUpperCase();
   APP.shiftStart=new Date();
-  // Derive ambId from user's ambulance field or default
   APP.ambId = u.amb || 'AMB-2026';
+  u.trips = u.trips || [];
+  // Sanitise corrupt legacy trips: drop any trip whose timeSavedStr encodes
+  // an obviously impossible value (> 2 hours AND no valid timeSavedSec field)
+  u.trips = u.trips.filter(t => {
+    if(typeof t.timeSavedSec === 'number' && isFinite(t.timeSavedSec)) return true;
+    if(!t.timeSavedStr) return true;
+    const mMatch = t.timeSavedStr.match(/(\d+)m/);
+    if(mMatch && parseInt(mMatch[1]) > 9999) return false; // > ~166 hours → corrupt
+    return true;
+  });
+  // Also back-fill timeSavedSec for legacy clean trips that only have a string
+  u.trips.forEach(t => {
+    if(typeof t.timeSavedSec !== 'number' && t.timeSavedStr) {
+      const mM = t.timeSavedStr.match(/(\d{1,4})m/);
+      const sM = t.timeSavedStr.match(/(\d{1,2})s/);
+      t.timeSavedSec = (mM ? parseInt(mM[1]) * 60 : 0) + (sM ? parseInt(sM[1]) : 0);
+    }
+  });
+  // Persist sanitised data
+  const all = DB.get();
+  const idx = all.findIndex(x => x.id === u.id);
+  if(idx >= 0) { all[idx] = u; DB.save(all); }
+  renderTrips(u);
+  updateHomeTripStats(u);
 }
 
 /* ═══════════════════════════════════════
@@ -1392,7 +1650,12 @@ function updateMapMarkers(lat, lng, accuracy){
     initHomeMap();
   }
   if(APP.navMarker && APP.navMap){
-    if(!APP.navTimer) APP.navMarker.position = {lat, lng};
+    if(APP.gpsMode === 'real' || !APP.navTimer) {
+      APP.navMarker.setLatLng([lat, lng]);
+      if(APP.navTimer && APP.gpsMode === 'real') {
+        APP.navMap.panTo([lat, lng]);
+      }
+    }
   }
 }
 
@@ -1412,36 +1675,34 @@ function initNavMap(){
       drawDirectionsOnNavMap(APP._pendingDirectionsResult);
       APP._pendingDirectionsResult = null;
     }
-    google.maps.event.trigger(APP.navMap, 'resize');
+    setTimeout(() => APP.navMap.invalidateSize(), 150);
     return;
   }
 
   const lat = APP.gps?.lat ?? 28.5672;
   const lng = APP.gps?.lng ?? 77.2100;
 
-  const map = new google.maps.Map(document.getElementById('navLeaflet'), {
-    center: {lat, lng},
-    zoom: 15,
-    styles: MAP_STYLE_DARK,
-    disableDefaultUI: true,
-    mapId: "NAV_MAP_ID",
-    gestureHandling: "greedy"
-  });
+  const map = L.map('navLeaflet', {
+      zoomControl: false,
+      attributionControl: false
+  }).setView([lat, lng], 15);
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+  }).addTo(map);
 
-  const ambDiv = document.createElement("div");
-  ambDiv.className = "ambMarker";
-  APP.navMarker = new google.maps.marker.AdvancedMarkerElement({
-    map, position: {lat, lng}, content: ambDiv
+  const ambIcon = L.divIcon({
+      className: '',
+      html: '<div class="ambMarker"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
   });
+  APP.navMarker = L.marker([lat, lng], {icon: ambIcon}).addTo(map);
 
-  APP.dirRenderer = new google.maps.DirectionsRenderer({
-    map,
-    suppressMarkers: true,
-    polylineOptions: { strokeColor: '#f03e3e', strokeWeight: 6, strokeOpacity: 0.9 }
-  });
+  APP.navPolyline = L.polyline([], {color: '#f03e3e', weight: 6, opacity: 0.9}).addTo(map);
 
   APP.navMap = map;
-  google.maps.event.trigger(map, 'resize');
+  setTimeout(() => APP.navMap.invalidateSize(), 150);
 
   if(APP._pendingDirectionsResult){
     drawDirectionsOnNavMap(APP._pendingDirectionsResult);
@@ -1454,58 +1715,88 @@ function initNavMap(){
 }
 
 function requestAndDrawRoute(){
-  if(!APP.gps || !APP.navDestCoord || !window.google) return;
-  const svc = new google.maps.DirectionsService();
-  svc.route({
-    origin: {lat: APP.gps.lat, lng: APP.gps.lng},
-    destination: APP.navDestCoord,
-    travelMode: google.maps.TravelMode.DRIVING,
-    unitSystem: google.maps.UnitSystem.METRIC
-  }, (res, status) => {
-    if(status === 'OK') drawDirectionsOnNavMap(res);
-    else toast('\u26a0 Could not calculate route: ' + status);
-  });
+  if(!APP.gps || !APP.navDestCoord) return;
+  const url = `https://router.project-osrm.org/route/v1/driving/${APP.gps.lng},${APP.gps.lat};${APP.navDestCoord.lng},${APP.navDestCoord.lat}?overview=full&geometries=geojson&steps=true`;
+  fetch(url).then(r=>r.json()).then(res=>{
+    if(res.code === 'Ok') drawDirectionsOnNavMap(res);
+    else toast('\u26a0 Could not calculate route: ' + res.message);
+  }).catch(e=>toast('\u26a0 Route error'));
 }
 
 function drawDirectionsOnNavMap(result){
   if(!APP.navMap) return;
-  if(APP.dirRenderer) APP.dirRenderer.setDirections(result);
+  
+  if(APP._routeMarkers){
+    APP._routeMarkers.forEach(m => APP.navMap.removeLayer(m));
+  }
+  APP._routeMarkers = [];
 
-  const leg   = result.routes[0].legs[0];
+  const route = result.routes[0];
+  const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+  
+  if(APP.navPolyline) APP.navPolyline.setLatLngs(coords);
+
+  const leg   = route.legs[0];
   const steps = leg.steps;
   APP._navSteps = steps;
 
-  const path = [];
-  steps.forEach(step => step.path.forEach(pt => path.push({lat: pt.lat(), lng: pt.lng()})));
+  const path = coords.map(c => ({lat: c[0], lng: c[1]}));
   APP.navRoute = path;
 
-  APP.navEtaSec   = leg.duration.value;
-  APP.navTotalSec = leg.duration.value;
-  document.getElementById('navEta').textContent  = leg.duration.text;
+  APP.navEtaSec    = route.duration;
+  APP.navTotalSec  = route.duration;
+  APP.navTotalDist = route.distance;  // store total distance for progress calc
+  
+  const m = Math.floor(route.duration/60);
+  const durStr = m > 60 ? Math.floor(m/60)+'h '+(m%60)+'m' : m+' min';
+  document.getElementById('navEta').textContent  = durStr;
   const etaMinEl = document.getElementById('etaMin');
-  if(etaMinEl)  etaMinEl.textContent  = leg.duration.text;
+  if(etaMinEl)  etaMinEl.textContent  = durStr;
+  
+  const distStr = route.distance > 1000 ? (route.distance/1000).toFixed(1)+' km' : Math.round(route.distance)+' m';
   const etaDistEl = document.getElementById('etaDist');
-  if(etaDistEl) etaDistEl.textContent = leg.distance.text;
+  if(etaDistEl) etaDistEl.textContent = distStr;
+  // Initialise distance display in banner
+  const bDistEl = document.getElementById('bDist');
+  if(bDistEl) bDistEl.textContent = route.distance > 1000 ? (route.distance/1000).toFixed(1) : Math.round(route.distance);
+  const bEtaEl = document.getElementById('bEta');
+  if(bEtaEl) bEtaEl.textContent = 'ETA ~' + m + ' min';
 
-  const endLoc  = leg.end_location;
-  const destDiv = document.createElement('div');
-  destDiv.innerHTML = `<div style="background:#f03e3e;color:white;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:900;padding:4px 10px;border-radius:4px;letter-spacing:1.5px;box-shadow:0 2px 14px rgba(240,62,62,.5)">${APP.navDestName || 'DEST'}</div>`;
-  new google.maps.marker.AdvancedMarkerElement({ map: APP.navMap, position: endLoc, content: destDiv });
+  const endLoc  = coords[coords.length - 1]; // [lat, lng]
+  
+  const destIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: `<div style="background:#f03e3e;color:white;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:900;padding:4px 10px;border-radius:4px;letter-spacing:1.5px;box-shadow:0 2px 14px rgba(240,62,62,.5);white-space:nowrap">${APP.navDestName || 'DEST'}</div>`,
+    iconSize: [80, 20],
+    iconAnchor: [40, 10]
+  });
+  const mDest = L.marker(endLoc, {icon: destIcon}).addTo(APP.navMap);
+  APP._routeMarkers.push(mDest);
+
+  // Store step names for banner use
+  APP._stepNames = steps.map((s, i) => s.name || ('INT-' + i));
 
   steps.forEach((step, i) => {
     if(i === 0 || i === steps.length - 1) return;
-    const jDiv = document.createElement('div');
-    jDiv.innerHTML = `<div style="background:rgba(7,9,13,.88);border:1px solid #28344a;color:#8899aa;font-size:9px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:3px;letter-spacing:.5px;white-space:nowrap">INT-${i}</div>`;
-    new google.maps.marker.AdvancedMarkerElement({ map: APP.navMap, position: step.start_location, content: jDiv });
+    const pt = step.maneuver.location; // [lng, lat]
+    const intLabel = step.name ? step.name.split(' ').slice(0,3).join(' ') : ('INT-'+i);
+    const jIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background:rgba(7,9,13,.88);border:1px solid #28344a;color:#8899aa;font-size:9px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:3px;letter-spacing:.5px;white-space:nowrap">INT-${i} · ${intLabel}</div>`,
+        iconSize: [80, 16],
+        iconAnchor: [40, 8]
+    });
+    const mInt = L.marker([pt[1], pt[0]], {icon: jIcon}).addTo(APP.navMap);
+    APP._routeMarkers.push(mInt);
   });
 
   if(steps[0]) announceStep(steps[0]);
-  APP.navMap.fitBounds(result.routes[0].bounds);
+  APP.navMap.fitBounds(coords);
 }
 
 function recenterNav(){
   if(APP.navMap && APP.gps){
-    APP.navMap.panTo({lat: APP.gps.lat, lng: APP.gps.lng});
+    APP.navMap.panTo([APP.gps.lat, APP.gps.lng]);
     APP.navMap.setZoom(16);
   }
 }
@@ -1517,7 +1808,8 @@ function startNavTimer(){
   clearInterval(APP.navTimer);
   APP.navProgress = 0;
   APP.navTotalSec = APP.navEtaSec || 574; // store initial total for stats
-  const totalSec = APP.navTotalSec;
+  const totalSec  = APP.navTotalSec;
+  const totalDist = APP.navTotalDist || (totalSec * 14); // approx metres
   let lastStepIdx = -1;
 
   APP.navTimer = setInterval(()=>{
@@ -1528,14 +1820,41 @@ function startNavTimer(){
     const m = Math.floor(APP.navEtaSec / 60), s = APP.navEtaSec % 60;
     document.getElementById('navEta').textContent = m + 'm ' + (s < 10 ? '0' : '') + s + 's';
 
-    // Progress bar
-    document.getElementById('rpFill').style.width  = APP.navProgress.toFixed(1) + '%';
+    // Progress bar — shows % of distance covered
+    const pct = APP.navProgress.toFixed(1);
+    document.getElementById('rpFill').style.width  = pct + '%';
     document.getElementById('rpLabel').textContent = Math.round(APP.navProgress) + '%';
 
-    // Distance ticker
-    const dist = Math.max(0, Math.round(totalSec * 14 * (1 - APP.navProgress / 100)));
-    document.getElementById('bDist').textContent = dist;
-    document.getElementById('bEta').textContent  = 'ETA ~' + Math.ceil(dist / 15) + ' sec';
+    // Distance remaining ticker (metres)
+    const distRem = Math.max(0, Math.round(totalDist * (1 - APP.navProgress / 100)));
+    const distDisp = distRem > 999 ? (distRem / 1000).toFixed(1) : distRem;
+    const distUnit = distRem > 999 ? ' km' : ' m';
+    const bDistEl = document.getElementById('bDist');
+    const bEtaEl  = document.getElementById('bEta');
+    if(bDistEl) bDistEl.textContent = distDisp;
+    if(bEtaEl)  bEtaEl.textContent  = distRem > 0
+      ? 'ETA ~' + (distRem > 999 ? Math.ceil(distRem / 1000 / 0.8) + ' min' : Math.ceil(distRem / 14) + ' sec')
+      : 'Arriving…';
+    // Update distance unit in the span next to distBig
+    const distUnitEl = bDistEl?.nextElementSibling;
+    if(distUnitEl && distUnitEl.classList.contains('distUnit')) distUnitEl.textContent = distUnit;
+
+    // Update approaching banner name from real route steps (not address)
+    if(APP._navSteps && APP._navSteps.length > 1){
+      const t      = APP.navProgress / 100;
+      const stepI  = Math.min(Math.floor(t * APP._navSteps.length), APP._navSteps.length - 1);
+      const nextI  = Math.min(stepI + 1, APP._navSteps.length - 1);
+      const nxStep = APP._navSteps[nextI];
+      const bNameEl = document.getElementById('bName');
+      const bannerEl = document.getElementById('intBanner');
+      const bStatusEl = document.getElementById('bStatus');
+      if(bNameEl && nxStep && !document.getElementById('intBanner')?.dataset.serverControlled){
+        const intName = nxStep.name ? ('INT-' + (nextI) + ' · ' + nxStep.name.split(',')[0]) : ('INT-' + nextI);
+        bNameEl.textContent = intName;
+        if(bannerEl) bannerEl.className = 'intBanner approaching';
+        if(bStatusEl) bStatusEl.textContent = '⬤  APPROACHING';
+      }
+    }
 
     // Move ambulance marker along real route path
     if(APP.navRoute && APP.navRoute.length > 1 && APP.navMarker){
@@ -1544,9 +1863,12 @@ function startNavTimer(){
       const si   = Math.min(Math.floor(t * segs), segs - 1);
       const lt   = t * segs - si;
       const a    = APP.navRoute[si], b = APP.navRoute[si + 1];
-      const newPos = { lat: a.lat + (b.lat - a.lat) * lt, lng: a.lng + (b.lng - a.lng) * lt };
-      APP.navMarker.position = newPos;
-      if(APP.navMap) APP.navMap.panTo(newPos);
+      const newPos = [ a.lat + (b.lat - a.lat) * lt, a.lng + (b.lng - a.lng) * lt ];
+      
+      if(APP.gpsMode !== 'real') {
+         APP.navMarker.setLatLng(newPos);
+         if(APP.navMap) APP.navMap.panTo(newPos);
+      }
 
       // Voice: announce next turn step based on progress
       if(APP._navSteps && APP._navSteps.length){
@@ -1565,7 +1887,7 @@ function startNavTimer(){
     document.getElementById('navSpd').classList.toggle('hot', spd > 80);
 
     // Arrived?
-    if(APP.navEtaSec <= 0){ clearInterval(APP.navTimer); arrive(); }
+    if(APP.navEtaSec <= 0){ clearInterval(APP.navTimer); APP.navTimer = null; arrive(); }
   }, 1000);
 }
 
@@ -1672,9 +1994,16 @@ function speak(txt){
 
 function announceStep(step){
   if(!step || APP.muted) return;
-  const raw  = step.instructions || '';
-  const text = raw.replace(/<[^>]+>/g, ''); // strip HTML tags
-  const dist = step.distance ? step.distance.text : '';
+  const dist = step.distance > 1000 ? (step.distance/1000).toFixed(1)+' km' : Math.round(step.distance)+' m';
+  const type = step.maneuver.type;
+  const mod = step.maneuver.modifier;
+  const name = step.name ? ' onto ' + step.name : '';
+  let text = `${type} ${mod || ''}${name}`.trim();
+  if (type === 'turn') text = `Turn ${mod}${name}`;
+  else if (type === 'new name') text = `Continue${name}`;
+  else if (type === 'depart') text = `Head ${mod||''}${name}`;
+  else if (type === 'arrive') text = `Arrive at destination`;
+  
   speak('In ' + dist + ', ' + text);
   // Update HUD
   const turnTxt  = document.getElementById('turnTxt');
@@ -1683,7 +2012,7 @@ function announceStep(step){
   if(turnTxt)  turnTxt.textContent  = text;
   if(turnDist) turnDist.textContent = 'in ' + dist;
   if(turnArr){
-    const maneuver = step.maneuver || '';
+    const maneuver = mod || '';
     if(maneuver.includes('left'))  turnArr.textContent = '↰';
     else if(maneuver.includes('right')) turnArr.textContent = '↱';
     else if(maneuver.includes('uturn')) turnArr.textContent = '↺';
@@ -1739,9 +2068,13 @@ function assignRouteToServer(routeId){
 }
 
 function acceptRoute(){
+  // Off-duty guard
+  if(!APP.duty){
+    toast('🔴 Switch to On Duty before starting a trip!');
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+    return;
+  }
   document.getElementById('navDot').classList.remove('show');
-  // Use APP.routeId (set by applyRoute when dropdown was built/changed)
-  // fallback to srvSel.value, then fallback to Places hospital
   const srvSel = document.getElementById('srvRouteSel');
   const routeToAssign = APP.routeId || (srvSel && srvSel.value);
   if(routeToAssign){
@@ -1757,12 +2090,17 @@ function acceptRoute(){
   setTimeout(() => goTo('sNav'), 150);
 }
 function manualRoute(){
+  // Off-duty guard
+  if(!APP.duty){
+    toast('🔴 Switch to On Duty before starting a trip!');
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+    return;
+  }
   const sel = document.getElementById('destSel');
   const idx = sel.value;
   if(idx === '' || idx === null || isNaN(parseInt(idx))){ toast('Select a destination first'); return; }
   onDestSelChange();
   document.getElementById('navDot').classList.remove('show');
-  // Also assign server route if one was selected
   const srvSel = document.getElementById('srvRouteSel');
   if(srvSel && srvSel.value) assignRouteToServer(srvSel.value);
   setTimeout(() => goTo('sNav'), 200);
@@ -1770,6 +2108,7 @@ function manualRoute(){
 function arrive(){
   clearInterval(APP.navTimer);
   stopGpsLoop();
+  
   // Tell server the trip is done
   fetch(SERVER_URL+'/api/end_trip',{
     method:'POST',
@@ -1778,6 +2117,7 @@ function arrive(){
   })
   .then(()=>{ APP.routeId=''; })
   .catch(e=>console.warn('end_trip failed',e));
+  
   goTo('sComplete');
 }
 
@@ -1905,15 +2245,16 @@ socket.on('priority_change', data=>{
 /* ─── Update home screen stats from server stats ─── */
 function updateHomeStats(stats){
   if(!stats) return;
-  // Trips cleared (intersections_cleared)
-  const sClear = document.querySelector('#sHome .scard:nth-child(4) .sv');
-  if(sClear) sClear.textContent = stats.intersections_cleared ?? stats.total_overrides ?? 0;
+  // Trips cleared (intersections_cleared) — server stat takes priority over local
+  const sClear = document.getElementById('homeClearedVal');
+  if(sClear && (stats.intersections_cleared != null || stats.total_overrides != null))
+    sClear.textContent = stats.intersections_cleared ?? stats.total_overrides ?? 0;
   // Time saved
-  const sSaved = document.querySelector('#sHome .scard:nth-child(3) .sv');
+  const sSaved = document.getElementById('homeSavedVal');
   if(sSaved && stats.time_saved_str) sSaved.textContent = stats.time_saved_str;
   // Trips
-  const sTrips = document.querySelector('#sHome .scard:nth-child(2) .sv');
-  if(sTrips) sTrips.textContent = stats.total_trips ?? 0;
+  const sTrips = document.getElementById('homeTripsVal');
+  if(sTrips && stats.total_trips != null) sTrips.textContent = stats.total_trips;
 }
 
 /* ─── Update intersection banner from server analytics payload ─── */
@@ -1929,17 +2270,23 @@ function updateBannerFromServer(intersections){
   const bDist   = document.getElementById('bDist');
   if(!banner || !bStatus || !bName) return;
   if(over){
+    // Mark as server-controlled so the timer doesn't overwrite it
+    banner.dataset.serverControlled = '1';
     banner.className = 'intBanner clearing';
     bStatus.textContent = '🔴 CLEARING';
-    bName.textContent   = target.id + ' · ' + target.name;
+    // Show intersection name, never the GPS address
+    bName.textContent   = target.id + ' · ' + (target.name || 'Junction');
     if(bDist && target.distance != null) bDist.textContent = target.distance;
     const bEta = document.getElementById('bEta');
     if(bEta && target.override_duration) bEta.textContent = 'Override: ' + target.override_duration + 's';
   } else {
+    // Release server control when no override so timer can update
+    delete banner.dataset.serverControlled;
     const nearest = intersections.reduce((a,b)=>((a.distance||9999)<(b.distance||9999)?a:b));
     banner.className = 'intBanner approaching';
     bStatus.textContent = '⬤ APPROACHING';
-    bName.textContent   = nearest.id + ' · ' + nearest.name;
+    // Use the server intersection name (not GPS reverse geocode address)
+    bName.textContent   = nearest.id + ' · ' + (nearest.name || 'Junction');
     if(bDist && nearest.distance != null) bDist.textContent = nearest.distance;
   }
 }
@@ -2090,7 +2437,6 @@ function useFallbackHospitals(lat, lng){
     geometry: { location: { lat:()=>h.lat, lng:()=>h.lng } }
   }));
   populateHospitals(mockResults);
-  toast('📋 Showing nearest hospitals (Places API unavailable)');
 }
 
 function populateHospitals(list){
@@ -2131,18 +2477,18 @@ function onDestSelChange(){
 }
 
 function previewRoute(destCoord){
-  if(!APP.gps || !window.google) return;
-  const svc = new google.maps.DirectionsService();
-  svc.route({
-    origin: {lat: APP.gps.lat, lng: APP.gps.lng},
-    destination: destCoord,
-    travelMode: google.maps.TravelMode.DRIVING,
-    unitSystem: google.maps.UnitSystem.METRIC
-  }, (res, status) => {
-    if(status !== 'OK') return;
-    const leg = res.routes[0].legs[0];
-    document.getElementById('etaMin').textContent = leg.duration.text;
-    document.getElementById('etaDist').textContent = leg.distance.text;
+  if(!APP.gps || !destCoord) return;
+  const url = `https://router.project-osrm.org/route/v1/driving/${APP.gps.lng},${APP.gps.lat};${destCoord.lng},${destCoord.lat}?overview=full&geometries=geojson&steps=true`;
+  fetch(url).then(r=>r.json()).then(res=>{
+    if(res.code !== 'Ok') return;
+    const route = res.routes[0];
+    const m = Math.floor(route.duration / 60);
+    const durStr = m > 60 ? Math.floor(m/60)+'h '+(m%60)+'m' : m+' min';
+    const etaMinEl = document.getElementById('etaMin');
+    if(etaMinEl) etaMinEl.textContent = durStr;
+    const distStr = route.distance > 1000 ? (route.distance/1000).toFixed(1)+' km' : Math.round(route.distance)+' m';
+    const etaDistEl = document.getElementById('etaDist');
+    if(etaDistEl) etaDistEl.textContent = distStr;
     APP._pendingDirectionsResult = res;
   });
 }
@@ -2332,7 +2678,7 @@ function toggleTheme(el) {
   
   const mapStyle = isLight ? MAP_STYLE_LIGHT : MAP_STYLE_DARK;
   if(APP.homeMap) APP.homeMap.setOptions({styles: mapStyle});
-  if(APP.navMap) APP.navMap.setOptions({styles: mapStyle});
+  if(APP.navMap && typeof APP.navMap.setOptions === 'function') APP.navMap.setOptions({styles: mapStyle});
   
   toast(isLight ? '🔆 Light mode activated' : '🌙 Night mode activated');
 }
@@ -2351,10 +2697,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     );
   }
   
-  // Show demo hint on login
+  // Demo hint removed
   const info=document.getElementById('lInfo');
-  info.style.display='block';
-  info.textContent='Demo login: ID = DRV-2047 · Password = demo1234';
+  if(info) info.style.display='none';
   keepOn();
   window.addEventListener('resize',()=>{
     if(APP.homeMap) google.maps.event.trigger(APP.homeMap, 'resize');
